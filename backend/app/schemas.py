@@ -60,6 +60,7 @@ class GoogleIn(Base):
 
 class ProfileIn(Base):
     name: Name | None = None
+    ai_coach_enabled: bool | None = None
     avatar: str | None = Field(default=None, max_length=32)
     locale: LocaleLiteral | None = None
 
@@ -176,3 +177,7 @@ class PushSubscribeIn(Base):
 
 class PushUnsubscribeIn(Base):
     endpoint: str = Field(min_length=10, max_length=600)
+
+
+class CoachGenerateIn(Base):
+    refresh: bool = False

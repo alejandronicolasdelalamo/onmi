@@ -30,6 +30,17 @@ def today() -> date:
     return utcnow().date()
 
 
+def client_today() -> date:
+    """Día del usuario (su zona horaria) si el cliente lo manda en `?today=`; acotado a ±1 día del servidor."""
+    server = today()
+    raw = request.args.get("today")
+    try:
+        day = date.fromisoformat(raw) if raw else server
+    except ValueError:
+        return server
+    return day if abs((day - server).days) <= 1 else server
+
+
 def parse_body(schema: type[BaseModel], partial: bool = False) -> BaseModel:
     data = request.get_json(silent=True)
     if not isinstance(data, dict):

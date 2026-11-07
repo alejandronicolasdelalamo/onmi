@@ -25,7 +25,7 @@ from ..schemas import (
     ResetPasswordIn,
     TokenIn,
 )
-from ..services import mail
+from ..services import coach, mail
 from ..utils import ApiError, current_user, parse_body, utcnow
 
 bp = Blueprint("auth", __name__, url_prefix="/api/auth")
@@ -137,6 +137,11 @@ def me():
 def update_me():
     user = current_user()
     data = parse_body(ProfileIn)
+    if data.ai_coach_enabled is not None:
+        if user.is_demo:  # la cuenta demo es compartida: nunca envía datos a un servicio externo
+            raise ApiError("The demo account cannot use the AI coach", 403, "forbidden")
+        if data.ai_coach_enabled and not coach.ai_available():
+            raise ApiError("The AI coach is not configured on this server", 501, "not_configured")
     for field in data.model_fields_set:
         value = getattr(data, field)
         if value is not None:

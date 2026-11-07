@@ -39,6 +39,9 @@ class Config:
     VAPID_PUBLIC_KEY = os.getenv("VAPID_PUBLIC_KEY", "")
     VAPID_PRIVATE_KEY = os.getenv("VAPID_PRIVATE_KEY", "")
     VAPID_SUBJECT = os.getenv("VAPID_SUBJECT", "mailto:no-reply@onmi.app")
+    # Coach semanal con IA (opcional). Sin clave se usa siempre el redactor local.
+    ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+    COACH_MODEL = os.getenv("COACH_MODEL", "claude-opus-5-5")
 
     RATELIMIT_STORAGE_URI = os.getenv("RATELIMIT_STORAGE_URI", "memory://")
     RATELIMIT_ENABLED = os.getenv("RATELIMIT_ENABLED", "true").lower() == "true"
@@ -68,6 +71,7 @@ class TestConfig(Config):
     GOOGLE_CLIENT_ID = "test-client-id"
     VAPID_PUBLIC_KEY = "test-public-key"
     VAPID_PRIVATE_KEY = "test-private-key"
+    ANTHROPIC_API_KEY = "test-anthropic-key"
 
 
 def get_config(name: str | None = None):

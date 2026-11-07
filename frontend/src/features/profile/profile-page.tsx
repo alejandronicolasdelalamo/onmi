@@ -28,6 +28,7 @@ import { cn, localISODate } from "@/lib/utils";
 import { AvatarGif } from "@/features/mood/mood-page";
 
 import { PasswordInput } from "@/components/ui/password-input";
+import { AiCoachCard } from "./ai-coach-card";
 import { RemindersCard } from "./reminders-card";
 const AVATARS = ["male", "female", "prefer_not_to_say"] as const;
 
@@ -368,6 +369,8 @@ export function ProfilePage() {
         </Card>
 
         <RemindersCard />
+
+        <AiCoachCard />
 
         <DataExport />
 

@@ -35,6 +35,7 @@ ONMi es una app de productividad personal. Reúne en una sola interfaz lo que no
 - **Ánimo**: registro diario con historial de 30 días, distribución y un avatar que reacciona a cómo te sientes.
 - **Enfoque (Pomodoro)** con duración configurable, sonido y notificaciones, sesiones guardadas en el servidor y estadísticas.
 - **Insights**: conecta tus datos. Compara cada semana con la anterior (hábitos, enfoque, ánimo, metas) y detecta patrones, por ejemplo *«los días que corres, tu ánimo medio es 4,2 frente a 2,8»*. Es prudente: exige un mínimo de días en cada grupo, solo muestra efectos relevantes y lo presenta como patrón, no como causa.
+- **Coach semanal**: una revisión escrita de tu semana (qué fue bien, en qué fijarte y una sugerencia). Por defecto la redacta el servidor con plantillas, sin enviar nada fuera. Si el administrador configura una clave y **tú lo activas** en Ajustes, la escribe Claude a partir de datos agregados; si Claude falla, vuelve a la versión local sin errores.
 - **Primeros pasos** para cuentas nuevas, calculados con los datos reales, y **celebración de rachas** (7, 30, 100 días…) con confeti que respeta `prefers-reduced-motion`.
 - **Exportar mis datos** en JSON desde Ajustes.
 - **Panel de administración** con métricas de la plataforma y gestión de usuarios (roles, activar/desactivar, borrar).
@@ -68,7 +69,7 @@ ONMi es una app de productividad personal. Reúne en una sola interfaz lo que no
 | Frontend | React 19, TypeScript, Vite, Tailwind CSS 4, componentes estilo shadcn/ui sobre Radix, TanStack Query, React Hook Form + Zod, dnd-kit, Recharts, cmdk, i18next |
 | Backend | Flask 3, SQLAlchemy 2, Flask-Migrate (Alembic), Flask-JWT-Extended, Flask-Limiter, Pydantic v2, Flask-Admin |
 | Datos | PostgreSQL en producción · SQLite en desarrollo y tests |
-| Calidad | pytest (77 tests, 93 % de cobertura), Vitest + Testing Library (48), Playwright E2E (32, incluida una auditoría de accesibilidad con axe-core), Ruff, ESLint, TypeScript estricto |
+| Calidad | pytest (100 tests, 94 % de cobertura), Vitest + Testing Library (58), Playwright E2E (36, incluida una auditoría de accesibilidad con axe-core), Ruff, ESLint, TypeScript estricto |
 | DevOps | Docker multi-stage, Docker Compose, GitHub Actions, blueprint de Render |
 
 ## Arquitectura
@@ -158,9 +159,23 @@ Vite redirige `/api` al backend, así que no hace falta configurar CORS en local
 | `GOOGLE_CLIENT_ID` | Activa "Continuar con Google". Sin él, el botón se oculta. |
 | `DEMO_ENABLED` | Muestra el botón "Try the demo" (usuario `demo@onmi.app` con datos de ejemplo). |
 | `COOKIE_SECURE` | `true` por defecto en producción. |
+| `ANTHROPIC_API_KEY`, `COACH_MODEL` | Permiten que el coach semanal lo escriba Claude (modelo `claude-opus-5-5` por defecto). Sin clave, el coach usa siempre el redactor local. |
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Activan los recordatorios push. Genera el par con `flask generate-vapid`. Sin ellos, la opción se oculta. |
 
 Crear un administrador: `flask create-admin tu@email.com`.
+
+### Coach con IA y privacidad
+
+El coach funciona sin IA. Para que lo escriba Claude hacen falta **dos cosas**: que el servidor tenga `ANTHROPIC_API_KEY` y que
+**cada usuario lo active** en Ajustes (apagado por defecto). Lo que se envía es una instantánea agregada de los últimos 7 días:
+totales y medias (hábitos cumplidos, minutos de enfoque, ánimo medio, metas completadas) y los nombres de hábitos, metas y
+proyectos. **Nunca** se envían las notas, el correo, el nombre ni el registro de ánimo día a día. La cuenta demo compartida
+nunca usa IA. La llamada usa el SDK oficial de Anthropic con reintento automático en otro modelo si un clasificador de seguridad
+rechazara la petición, y cualquier fallo (red, rechazo, respuesta vacía) devuelve la revisión local en vez de un error. La
+revisión se guarda por semana (no se regenera sin motivo) y regenerarla tiene una pausa de una hora para acotar el coste.
+
+> Con una clave real no se ha podido probar en este entorno: el flujo está cubierto con un cliente simulado que comprueba los
+> parámetros enviados, que no se filtra nada privado y los tres modos de fallo.
 
 ### Recordatorios de hábitos
 
@@ -176,9 +191,9 @@ Crear un administrador: `flask create-admin tu@email.com`.
 ## Tests
 
 ```bash
-cd backend  && pytest --cov=app          # 77 tests
-cd frontend && npm test                  # 48 tests (Vitest)
-cd frontend && npx playwright install chromium && npm run e2e   # 32 tests de extremo a extremo (24 flujos + 8 de accesibilidad)
+cd backend  && pytest --cov=app          # 100 tests
+cd frontend && npm test                  # 58 tests (Vitest)
+cd frontend && npx playwright install chromium && npm run e2e   # 36 tests de extremo a extremo (28 flujos + 8 de accesibilidad)
 ```
 
 Los E2E arrancan solos una API con base de datos SQLite desechable y el servidor de Vite. Para regenerar las capturas de este

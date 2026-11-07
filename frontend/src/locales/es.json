@@ -436,5 +436,31 @@
     "unsupported": "Este navegador no admite notificaciones push.",
     "notConfigured": "Los recordatorios aún no están configurados en este servidor.",
     "blocked": "Las notificaciones están bloqueadas. Permítelas en los ajustes del navegador para activar los recordatorios."
+  },
+  "coach": {
+    "title": "Coach semanal",
+    "empty": "Tu revisión de la semana: qué fue bien, en qué fijarte y una sugerencia para la próxima.",
+    "generate": "Generar mi revisión semanal",
+    "refresh": "Actualizar revisión",
+    "generating": "Escribiendo tu revisión…",
+    "sourceClaude": "Escrita por Claude",
+    "sourceLocal": "Generada sin IA",
+    "forWeek": "Semana del {{date}}",
+    "aiError": "Claude no estaba disponible en este momento, así que esta revisión se ha generado sin IA.",
+    "cooldown": "Podrás actualizarla de nuevo en {{minutes}} min.",
+    "enableHint": "¿Quieres que la escriba Claude? Activa el coach con IA en"
+  },
+  "aiCoach": {
+    "title": "Coach con IA",
+    "desc": "Deja que Claude escriba tu revisión semanal. Es opcional y está desactivado por defecto; sin él recibes una revisión más sencilla generada en el servidor.",
+    "toggle": "Usar Claude para escribir mi revisión semanal",
+    "sentTitle": "Qué se envía",
+    "sent": "Solo totales y medias de tus últimos 7 días (hábitos cumplidos, minutos de enfoque, ánimo medio, metas completadas) y los nombres de tus hábitos, metas y proyectos.",
+    "neverTitle": "Qué nunca se envía",
+    "never": "Tus notas, tu correo, tu nombre ni tu registro de ánimo día a día.",
+    "demo": "La cuenta demo compartida nunca usa IA.",
+    "provider": "Las peticiones van a la API de Anthropic ({{model}}).",
+    "enabledToast": "Coach con IA activado",
+    "disabledToast": "Coach con IA desactivado"
   }
 }

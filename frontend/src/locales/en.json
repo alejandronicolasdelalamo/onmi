@@ -436,5 +436,31 @@
     "unsupported": "This browser does not support push notifications.",
     "notConfigured": "Reminders are not set up on this server yet.",
     "blocked": "Notifications are blocked. Allow them in your browser settings to enable reminders."
+  },
+  "coach": {
+    "title": "Weekly coach",
+    "empty": "Your review of the week: what went well, what to keep an eye on and one suggestion for next week.",
+    "generate": "Generate my weekly review",
+    "refresh": "Refresh review",
+    "generating": "Writing your review…",
+    "sourceClaude": "Written by Claude",
+    "sourceLocal": "Generated without AI",
+    "forWeek": "Week of {{date}}",
+    "aiError": "Claude was not available just now, so this review was generated without AI.",
+    "cooldown": "You can refresh again in {{minutes}} min.",
+    "enableHint": "Want Claude to write it? Turn on the AI coach in"
+  },
+  "aiCoach": {
+    "title": "AI coach",
+    "desc": "Let Claude write your weekly review. It is optional and off by default; without it you get a simpler review generated on the server.",
+    "toggle": "Use Claude to write my weekly review",
+    "sentTitle": "What is sent",
+    "sent": "Only totals and averages from your last 7 days (habit completion, focus minutes, average mood, goals completed) plus the names of your habits, goals and projects.",
+    "neverTitle": "What is never sent",
+    "never": "Your notes, your email, your name or your day-by-day mood log.",
+    "demo": "The shared demo account never uses AI.",
+    "provider": "Requests go to Anthropic's API ({{model}}).",
+    "enabledToast": "AI coach enabled",
+    "disabledToast": "AI coach turned off"
   }
 }

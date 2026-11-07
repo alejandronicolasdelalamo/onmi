@@ -12,6 +12,7 @@ export interface User {
   locale: "en" | "es";
   email_verified: boolean;
   is_demo: boolean;
+  ai_coach_enabled: boolean;
   has_password: boolean;
   created_at: string;
 }
@@ -195,4 +196,21 @@ export interface PushStatus {
   public_key: string | null;
   subscriptions: number;
   timezone: string;
+}
+
+export interface CoachReview {
+  text: string;
+  source: "claude" | "local";
+  model: string | null;
+  locale: string;
+  week_start: string;
+  created_at: string;
+}
+
+export interface CoachStatus {
+  ai_available: boolean;
+  ai_enabled: boolean;
+  can_enable: boolean;
+  model: string | null;
+  review: CoachReview | null;
 }

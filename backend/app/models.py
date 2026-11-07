@@ -70,6 +70,8 @@ class User(db.Model):
     avatar: Mapped[str | None] = mapped_column(String(32))
     locale: Mapped[str] = mapped_column(String(5), default="en")
     timezone: Mapped[str] = mapped_column(String(64), default="UTC", server_default="UTC")
+    # Opt-in: el coach semanal se redacta con Claude (datos agregados). Desactivado = redactor local.
+    ai_coach_enabled: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
     is_demo: Mapped[bool] = mapped_column(Boolean, default=False)
     failed_logins: Mapped[int] = mapped_column(Integer, default=0)
     locked_until: Mapped[datetime | None] = mapped_column(DateTime)
@@ -107,6 +109,7 @@ class User(db.Model):
             "locale": self.locale,
             "email_verified": self.email_verified,
             "is_demo": self.is_demo,
+            "ai_coach_enabled": self.ai_coach_enabled,
             "has_password": bool(self.password_hash),
             "created_at": self.created_at.isoformat(),
         }
@@ -374,3 +377,29 @@ class PushSubscription(db.Model):
 
     def to_webpush(self) -> dict:
         return {"endpoint": self.endpoint, "keys": {"p256dh": self.p256dh, "auth": self.auth}}
+
+
+class CoachReview(db.Model):
+    """Revisión semanal del coach (una por usuario y semana; se guarda para no regenerarla ni gastar de más)."""
+
+    __tablename__ = "coach_reviews"
+    __table_args__ = (UniqueConstraint("user_id", "week_start", name="uq_coach_user_week"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    week_start: Mapped[date] = mapped_column(Date)  # lunes de la semana revisada
+    locale: Mapped[str] = mapped_column(String(5), default="en")
+    source: Mapped[str] = mapped_column(String(10))  # "claude" | "local"
+    model: Mapped[str | None] = mapped_column(String(64))
+    text: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+
+    def to_dict(self) -> dict:
+        return {
+            "text": self.text,
+            "source": self.source,
+            "model": self.model,
+            "locale": self.locale,
+            "week_start": self.week_start.isoformat(),
+            "created_at": self.created_at.isoformat(),
+        }

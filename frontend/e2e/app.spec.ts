@@ -403,3 +403,77 @@ test.describe("frecuencia semanal y recordatorios", () => {
     await expect(page.getByText(/of 4 this week/)).toBeVisible();
   });
 });
+
+test.describe("coach semanal", () => {
+  test("una cuenta nueva genera su revisión semanal sin IA y puede actualizarla", async ({
+    page,
+  }) => {
+    await register(page);
+    await page.goto("/insights");
+    await expect(
+      page.getByRole("heading", { name: "Weekly coach" }),
+    ).toBeVisible();
+    await page
+      .getByRole("button", { name: "Generate my weekly review" })
+      .click();
+
+    await expect(page.getByText("Generated without AI")).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "This week", exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Next week" }),
+    ).toBeVisible();
+
+    // Persiste al recargar y se puede pedir otra versión (el servidor limita la frecuencia).
+    await page.reload();
+    await expect(page.getByText("Generated without AI")).toBeVisible();
+    await page.getByRole("button", { name: "Refresh review" }).click();
+    await expect(
+      page.getByText(/You can refresh again in \d+ min/),
+    ).toBeVisible();
+  });
+
+  test("el demo tiene revisión con datos reales de ejemplo", async ({
+    page,
+  }) => {
+    await page.goto("/login");
+    await page.getByRole("button", { name: "Try the demo" }).click();
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("Demo");
+    await page.goto("/insights");
+    await page
+      .getByRole("button", { name: "Generate my weekly review" })
+      .click();
+    await expect(
+      page.getByText(/You completed \d+% of your habit check-ins/),
+    ).toBeVisible();
+    await expect(page.getByText(/Morning run/).first()).toBeVisible();
+  });
+
+  test("sin clave de Claude en el servidor no se ofrece el coach con IA", async ({
+    page,
+  }) => {
+    await register(page);
+    await page.goto("/settings");
+    await expect(
+      page.getByRole("heading", { name: "Reminders" }),
+    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "AI coach" })).toHaveCount(
+      0,
+    );
+    await page.goto("/insights");
+    await expect(page.getByText(/Want Claude to write it/)).toHaveCount(0);
+  });
+
+  test("el coach respeta el idioma de la interfaz", async ({ page }) => {
+    await register(page);
+    await page.getByRole("button", { name: /Switch language/ }).click();
+    await page.goto("/insights");
+    await page
+      .getByRole("button", { name: "Generar mi revisión semanal" })
+      .click();
+    await expect(
+      page.getByRole("heading", { name: "Esta semana", exact: true }),
+    ).toBeVisible();
+  });
+});

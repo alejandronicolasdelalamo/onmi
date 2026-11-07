@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { MoodFace } from "@/components/mood-face";
 import { QueryError } from "@/components/query-error";
 import { Page, PageHeader } from "@/components/page";
+import { CoachCard } from "./coach-card";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -279,6 +280,8 @@ export function InsightsPage() {
               />
             </CardContent>
           </Card>
+
+          <CoachCard />
 
           <section aria-labelledby="patterns" className="space-y-4">
             <h2

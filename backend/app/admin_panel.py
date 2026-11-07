@@ -42,6 +42,6 @@ class SecureView(_Secure, ModelView):
 
 def setup_admin(app):
     admin = Admin(app, name="ONMi Admin", url="/db-admin", index_view=SecureIndex(url="/db-admin"))
-    admin.add_view(UserView(User, db.session))
+    admin.add_view(UserView(User, db))
     for model in (Note, Project, Goal, Habit, MoodEntry, PomodoroSession):
-        admin.add_view(SecureView(model, db.session))
+        admin.add_view(SecureView(model, db))
