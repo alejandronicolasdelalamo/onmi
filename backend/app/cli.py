@@ -35,6 +35,33 @@ def register_cli(app: Flask) -> None:
             f"suscripciones caducadas eliminadas: {stats['subscriptions_removed']}"
         )
 
+    @app.cli.command("send-test-mail")
+    @click.argument("to")
+    def send_test_mail(to):
+        """Correo de prueba con SendGrid; muestra el error real si falla (la app solo lo registra)."""
+        from flask import current_app
+
+        key = current_app.config.get("SENDGRID_API_KEY")
+        sender = current_app.config["MAIL_FROM"]
+        if not key:
+            raise click.ClickException("Falta SENDGRID_API_KEY (ponla en backend/.env).")
+        from sendgrid import SendGridAPIClient
+        from sendgrid.helpers.mail import Mail
+
+        mail = Mail(
+            from_email=sender,
+            to_emails=to,
+            subject="ONMi: correo de prueba",
+            plain_text_content="Si lees esto, SendGrid funciona.",
+        )
+        try:
+            response = SendGridAPIClient(key).send(mail)
+        except Exception as exc:
+            body = getattr(exc, "body", b"")
+            detail = body.decode(errors="replace") if isinstance(body, bytes) else str(body or exc)
+            raise click.ClickException(f"SendGrid rechazó el envío desde {sender}: {detail}") from exc
+        click.echo(f"Enviado desde {sender} a {to} (HTTP {response.status_code}). Revisa también la carpeta de spam.")
+
     @app.cli.command("generate-vapid")
     def generate_vapid():
         """Genera un par de claves VAPID para las notificaciones push."""

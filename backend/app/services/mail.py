@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
+from html import escape
 
 from flask import current_app
 
@@ -56,7 +57,8 @@ def send_verification(user, token: str) -> None:
             user.email,
             "Verify your ONMi email",
             f"Hi {user.name},\n\nConfirm your email: {link}\n\nThe link expires in 24 hours.",
-            f'<p>Hi {user.name},</p><p><a href="{link}">Confirm your email</a></p><p>The link expires in 24 hours.</p>',
+            f'<p>Hi {escape(user.name)},</p><p><a href="{link}">Confirm your email</a></p>'
+            "<p>The link expires in 24 hours.</p>",
         )
     )
 
@@ -69,7 +71,7 @@ def send_password_reset(user, token: str) -> None:
             "Reset your ONMi password",
             f"Hi {user.name},\n\nReset your password: {link}\n\n"
             "The link expires in 1 hour. If this was not you, ignore this email.",
-            f'<p>Hi {user.name},</p><p><a href="{link}">Reset your password</a></p>'
+            f'<p>Hi {escape(user.name)},</p><p><a href="{link}">Reset your password</a></p>'
             "<p>The link expires in 1 hour. If this was not you, ignore this email.</p>",
         )
     )
