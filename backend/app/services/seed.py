@@ -101,7 +101,7 @@ HABITS = [
     ("Read 20 pages", "Learning", "#6366f1", 0.7),
     ("Meditate", "Mindfulness", "#14b8a6", 0.55),
     ("Write code", "Career", "#3b82f6", 0.85),
-    ("Drink 2L of water", "Health", "#0ea5e9", 0.9),
+    ("Drink 2L of water", "Health", "#0ea5e9", 0.72),
 ]
 
 
@@ -169,7 +169,9 @@ def seed_demo_data(user: User, seed: int = 7) -> None:
         for back in range(0, 110):
             day = t - timedelta(days=back)
             # racha viva reciente + ruido realista antes
-            if back < 6 and name in {"Write code", "Drink 2L of water"} or rng.random() < p:
+            streak_alive = back < 13 and name in {"Write code", "Morning run"}
+            weekday_dip = day.weekday() >= 5 and name in {"Write code", "Read 20 pages"}
+            if streak_alive or (not weekday_dip and rng.random() < p):
                 db.session.add(HabitLog(habit_id=habit.id, day=day))
 
     moods = [

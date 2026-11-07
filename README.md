@@ -176,6 +176,11 @@ onmi/
 └── .github/workflows/ci.yml
 ```
 
+## Diseño
+
+Las pantallas clave (acceso, dashboard y tablero Kanban) están maquetadas en Figma como referencia de estructura y sistema
+visual: tipografía Inter, paleta índigo, tarjetas con borde fino y modo claro/oscuro.
+
 ## Origen del proyecto
 
 ONMi nació como un proyecto de grupo durante un bootcamp (React + Flask). Esta versión es una **reescritura completa** hecha
