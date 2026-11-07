@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
-import { BadgeCheck, MailWarning } from "lucide-react";
+import { BadgeCheck, Download, MailWarning } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -24,7 +24,7 @@ import { errorMessage } from "@/lib/errors";
 import i18n, { LANGUAGES } from "@/lib/i18n";
 import { useTheme, type Theme } from "@/lib/theme";
 import type { User } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, localISODate } from "@/lib/utils";
 import { AvatarGif } from "@/features/mood/mood-page";
 
 import { PasswordInput } from "@/components/ui/password-input";
@@ -130,6 +130,47 @@ function PasswordForm() {
         {t("profile.changePassword")}
       </Button>
     </form>
+  );
+}
+
+function DataExport() {
+  const { t } = useTranslation();
+  const m = useMutation({
+    mutationFn: async () => {
+      const data = await api.get<unknown>("/api/auth/export");
+      const url = URL.createObjectURL(
+        new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }),
+      );
+      const a = Object.assign(document.createElement("a"), {
+        href: url,
+        download: `onmi-export-${localISODate()}.json`,
+      });
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    },
+    onSuccess: () => toast.success(t("profile.downloaded")),
+    onError: (e) => toast.error(errorMessage(e, t)),
+  });
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("profile.data")}</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-wrap items-center justify-between gap-3">
+        <p className="max-w-lg text-sm text-muted-foreground">
+          {t("profile.dataDesc")}
+        </p>
+        <Button
+          variant="outline"
+          onClick={() => m.mutate()}
+          disabled={m.isPending}
+        >
+          <Download /> {t("profile.download")}
+        </Button>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -324,6 +365,8 @@ export function ProfilePage() {
             </div>
           </CardContent>
         </Card>
+
+        <DataExport />
 
         {!user.is_demo && (
           <>

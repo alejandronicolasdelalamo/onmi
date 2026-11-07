@@ -113,7 +113,8 @@ def toggle_habit(habit_id):
     data = parse_body(ToggleIn) if request.data else ToggleIn()
     day = data.date or today()
     t = today()
-    if day > t:
+    # +1 día de margen: el usuario puede ir por delante de UTC (su «hoy» ya es el «mañana» del servidor).
+    if day > t + timedelta(days=1):
         raise ApiError("Cannot mark a future day", 422, "validation_error")
     if day < t - timedelta(days=365):
         raise ApiError("Date is too old", 422, "validation_error")

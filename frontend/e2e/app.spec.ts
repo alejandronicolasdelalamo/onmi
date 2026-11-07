@@ -199,3 +199,123 @@ test.describe("experiencia", () => {
     await expect(page.getByText("Page not found")).toBeVisible();
   });
 });
+
+test.describe("novedades", () => {
+  test("insights: el demo muestra el efecto de un hábito en el ánimo", async ({
+    page,
+  }) => {
+    await page.goto("/login");
+    await page.getByRole("button", { name: "Try the demo" }).click();
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("Demo");
+    await page.getByRole("link", { name: "Insights" }).first().click();
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Insights" }),
+    ).toBeVisible();
+    await expect(page.getByText("This week", { exact: true })).toBeVisible();
+    await expect(page.getByText(/your mood averages/)).toContainText(
+      "Morning run",
+    );
+    await expect(
+      page.getByText(/A pattern in your data, not proof of cause/),
+    ).toBeVisible();
+  });
+
+  test("insights: una cuenta nueva ve cuánto falta para desbloquear patrones", async ({
+    page,
+  }) => {
+    await register(page);
+    await page.goto("/insights");
+    await expect(
+      page.getByText("Patterns unlock after 14 days of mood check-ins"),
+    ).toBeVisible();
+    await expect(page.getByRole("progressbar")).toHaveAttribute(
+      "aria-valuenow",
+      "0",
+    );
+    await page.getByRole("link", { name: "Log today's mood" }).click();
+    await expect(page).toHaveURL(/\/mood$/);
+  });
+
+  test("primeros pasos: avanza con los datos reales y se puede ocultar", async ({
+    page,
+  }) => {
+    await register(page);
+    await expect(page.getByText("Get started with ONMi")).toBeVisible();
+    await expect(page.getByText("0 of 4 done")).toBeVisible();
+
+    await page.getByRole("link", { name: "Create your first habit" }).click();
+    await page.getByLabel("Name").fill("Stretch");
+    await page.getByRole("button", { name: "Save" }).click();
+    await expect(page.getByRole("heading", { name: "Stretch" })).toBeVisible();
+
+    await page.getByRole("link", { name: "Home" }).first().click();
+    await expect(page.getByText("1 of 4 done")).toBeVisible();
+    await page.getByRole("button", { name: "Hide checklist" }).click();
+    await expect(page.getByText("Get started with ONMi")).toHaveCount(0);
+    await page.reload();
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    await expect(page.getByText("Get started with ONMi")).toHaveCount(0);
+  });
+
+  test("exportar mis datos descarga un JSON con mi información", async ({
+    page,
+  }) => {
+    const email = await register(page);
+    await page.goto("/habits");
+    await page.getByRole("button", { name: "New habit" }).first().click();
+    await page.getByLabel("Name").fill("Journal");
+    await page.getByRole("button", { name: "Save" }).click();
+    await expect(page.getByRole("heading", { name: "Journal" })).toBeVisible();
+
+    await page.goto("/settings");
+    const [download] = await Promise.all([
+      page.waitForEvent("download"),
+      page.getByRole("button", { name: "Download my data" }).click(),
+    ]);
+    expect(download.suggestedFilename()).toMatch(
+      /^onmi-export-\d{4}-\d{2}-\d{2}\.json$/,
+    );
+    const path = await download.path();
+    const data = JSON.parse(
+      await (await import("node:fs/promises")).readFile(path, "utf-8"),
+    );
+    expect(data.user.email).toBe(email);
+    expect(data.habits.map((h: { name: string }) => h.name)).toContain(
+      "Journal",
+    );
+    expect(JSON.stringify(data)).not.toContain("password_hash");
+  });
+
+  test("al completar 7 días seguidos se celebra la racha", async ({ page }) => {
+    await register(page);
+    await page.goto("/habits");
+    await page.getByRole("button", { name: "New habit" }).first().click();
+    await page.getByLabel("Name").fill("Walk");
+    await page.getByRole("button", { name: "Save" }).click();
+    await expect(page.getByRole("heading", { name: "Walk" })).toBeVisible();
+
+    // Marca los 6 días anteriores desde la tira de 14 días, y luego hoy.
+    const localDay = (back: number) => {
+      const d = new Date();
+      d.setDate(d.getDate() - back);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    };
+    // El check es optimista (cambia al instante), así que se espera a que el servidor confirme cada día
+    // antes de seguir: las peticiones concurrentes podrían procesarse en otro orden.
+    const toggleAndWait = async (click: () => Promise<void>) => {
+      await Promise.all([
+        page.waitForResponse((r) => r.url().includes("/toggle") && r.ok()),
+        click(),
+      ]);
+    };
+    for (let back = 6; back >= 1; back--) {
+      await toggleAndWait(() =>
+        page.getByRole("button", { name: `Toggle ${localDay(back)}` }).click(),
+      );
+    }
+    await toggleAndWait(() =>
+      page.getByRole("button", { name: "Mark as done" }).click(),
+    );
+    await expect(page.getByText("7-day streak!")).toBeVisible();
+  });
+});

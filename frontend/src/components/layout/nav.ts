@@ -6,6 +6,7 @@ import {
   Smile,
   Target,
   Timer,
+  TrendingUp,
 } from "lucide-react";
 
 export const NAV = [
@@ -16,4 +17,5 @@ export const NAV = [
   { to: "/goals", key: "goals", icon: Target },
   { to: "/mood", key: "mood", icon: Smile },
   { to: "/focus", key: "focus", icon: Timer },
+  { to: "/insights", key: "insights", icon: TrendingUp },
 ] as const;

@@ -39,7 +39,8 @@
     "signOut": "Cerrar sesión",
     "apiDocs": "Docs de la API",
     "skip": "Saltar al contenido",
-    "menu": "Abrir menú"
+    "menu": "Abrir menú",
+    "insights": "Insights"
   },
   "auth": {
     "tagline": "Organiza tu vida, crea hábitos duraderos y haz seguimiento de tus metas.",
@@ -280,7 +281,11 @@
     "deleteAccount": "Eliminar cuenta",
     "deleteWarning": "Esto elimina de forma permanente tu cuenta y todos tus datos.",
     "deleteConfirmLabel": "Escribe DELETE para confirmar",
-    "demoNotice": "Estás usando la cuenta demo. Los cambios pueden restablecerse."
+    "demoNotice": "Estás usando la cuenta demo. Los cambios pueden restablecerse.",
+    "data": "Tus datos",
+    "dataDesc": "Descarga todo lo que ONMi guarda sobre ti (notas, hábitos, proyectos, metas, ánimo y sesiones de enfoque) en un archivo JSON.",
+    "download": "Descargar mis datos",
+    "downloaded": "Tus datos se han descargado"
   },
   "admin": {
     "title": "Admin",
@@ -353,5 +358,54 @@
     "title": "Página no encontrada",
     "desc": "La página que buscas no existe.",
     "home": "Ir al inicio"
+  },
+  "insights": {
+    "title": "Insights",
+    "subtitle": "Los patrones que esconden tus propios datos.",
+    "weekTitle": "Esta semana",
+    "weekSub": "Comparada con los 7 días anteriores",
+    "metrics": {
+      "habits": "Hábitos cumplidos",
+      "focus": "Tiempo de enfoque",
+      "mood": "Ánimo medio",
+      "goals": "Metas completadas"
+    },
+    "delta": {
+      "up": "sube",
+      "down": "baja",
+      "same": "sin cambios",
+      "none": "sin datos para comparar",
+      "pts": "{{value}} pts",
+      "percent": "{{value}} %"
+    },
+    "patternsTitle": "Lo que dicen tus datos",
+    "effect": "Los días que haces <b>{{habit}}</b>, tu ánimo medio es <b>{{withAvg}}</b> frente a <b>{{withoutAvg}}</b>.",
+    "withLabel": "Con",
+    "withoutLabel": "Sin",
+    "basedOn": "Basado en {{withDays}} días con el hábito y {{withoutDays}} sin él. Un patrón de tus datos, no una prueba de causa.",
+    "unlockTitle": "Los patrones se desbloquean tras {{target}} días registrando tu ánimo",
+    "unlockProgress": "{{days}} de {{target}} días registrados",
+    "unlockCta": "Registrar el ánimo de hoy",
+    "noPatterns": "Aún no hay patrones claros. Sigue registrando y aparecerán aquí.",
+    "bestDay": "Tu día más constante es el {{day}}",
+    "bestDayDesc": "El {{share}} % de tus hábitos se cumple en {{day}}.",
+    "topStreak": "Racha de {{count}} días",
+    "topStreakDesc": "{{name}} es tu racha activa más larga.",
+    "outOf": "de 5"
+  },
+  "onboarding": {
+    "title": "Empieza con ONMi",
+    "progress": "{{done}} de {{total}} hechos",
+    "hide": "Ocultar lista",
+    "steps": {
+      "habit": "Crea tu primer hábito",
+      "note": "Escribe una nota",
+      "project": "Planifica un proyecto",
+      "mood": "Registra cómo te sientes hoy"
+    }
+  },
+  "celebrate": {
+    "title": "¡Racha de {{count}} días!",
+    "description": "Sigue así con {{name}}."
   }
 }

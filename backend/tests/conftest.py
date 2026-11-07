@@ -16,6 +16,7 @@ def app():
         yield app
         db.session.remove()
         db.drop_all()
+        db.engine.dispose()  # cierra la conexión SQLite en memoria (evita ResourceWarning)
 
 
 @pytest.fixture()

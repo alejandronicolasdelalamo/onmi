@@ -159,6 +159,30 @@ def delete_me():
     return resp
 
 
+@bp.get("/export")
+@jwt_required()
+@doc(
+    "Descargar todos mis datos en JSON",
+    "Auth",
+    description="Perfil, notas, proyectos, metas, hábitos, ánimo y pomodoros.",
+)
+def export_data():
+    user = current_user()
+    payload = {
+        "exported_at": utcnow().isoformat() + "Z",
+        "user": user.to_dict(),
+        "notes": [n.to_dict() for n in user.notes],
+        "projects": [p.to_dict() for p in user.projects],
+        "goals": [g.to_dict() for g in user.goals],
+        "habits": [h.to_dict() for h in user.habits],
+        "moods": [m.to_dict() for m in sorted(user.moods, key=lambda m: m.day)],
+        "pomodoro_sessions": [s.to_dict() for s in user.pomodoros],
+    }
+    resp = jsonify(payload)
+    resp.headers["Content-Disposition"] = f'attachment; filename="onmi-export-{utcnow().date().isoformat()}.json"'
+    return resp
+
+
 @bp.post("/change-password")
 @jwt_required()
 @limiter.limit("10 per hour")

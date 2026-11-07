@@ -39,7 +39,8 @@
     "signOut": "Sign out",
     "apiDocs": "API docs",
     "skip": "Skip to content",
-    "menu": "Open menu"
+    "menu": "Open menu",
+    "insights": "Insights"
   },
   "auth": {
     "tagline": "Organize your life, build lasting habits and keep track of your goals.",
@@ -280,7 +281,11 @@
     "deleteAccount": "Delete account",
     "deleteWarning": "This permanently deletes your account and all your data.",
     "deleteConfirmLabel": "Type DELETE to confirm",
-    "demoNotice": "You are using the demo account. Changes may be reset."
+    "demoNotice": "You are using the demo account. Changes may be reset.",
+    "data": "Your data",
+    "dataDesc": "Download everything ONMi stores about you (notes, habits, projects, goals, mood and focus sessions) as a JSON file.",
+    "download": "Download my data",
+    "downloaded": "Your data has been downloaded"
   },
   "admin": {
     "title": "Admin",
@@ -353,5 +358,54 @@
     "title": "Page not found",
     "desc": "The page you are looking for does not exist.",
     "home": "Go home"
+  },
+  "insights": {
+    "title": "Insights",
+    "subtitle": "Patterns hiding in your own data.",
+    "weekTitle": "This week",
+    "weekSub": "Compared with the previous 7 days",
+    "metrics": {
+      "habits": "Habits completed",
+      "focus": "Focus time",
+      "mood": "Average mood",
+      "goals": "Goals completed"
+    },
+    "delta": {
+      "up": "up",
+      "down": "down",
+      "same": "unchanged",
+      "none": "no data to compare",
+      "pts": "{{value}} pts",
+      "percent": "{{value}}%"
+    },
+    "patternsTitle": "What your data says",
+    "effect": "On days you do <b>{{habit}}</b>, your mood averages <b>{{withAvg}}</b> instead of <b>{{withoutAvg}}</b>.",
+    "withLabel": "With",
+    "withoutLabel": "Without",
+    "basedOn": "Based on {{withDays}} days with it and {{withoutDays}} without. A pattern in your data, not proof of cause.",
+    "unlockTitle": "Patterns unlock after {{target}} days of mood check-ins",
+    "unlockProgress": "{{days}} of {{target}} days logged",
+    "unlockCta": "Log today's mood",
+    "noPatterns": "No strong patterns yet. Keep logging and they will show up here.",
+    "bestDay": "Your most consistent day is {{day}}",
+    "bestDayDesc": "{{share}}% of your habit check-ins happen on {{day}}.",
+    "topStreak": "{{count}}-day streak",
+    "topStreakDesc": "{{name}} is your longest active streak.",
+    "outOf": "out of 5"
+  },
+  "onboarding": {
+    "title": "Get started with ONMi",
+    "progress": "{{done}} of {{total}} done",
+    "hide": "Hide checklist",
+    "steps": {
+      "habit": "Create your first habit",
+      "note": "Write a note",
+      "project": "Plan a project",
+      "mood": "Log how you feel today"
+    }
+  },
+  "celebrate": {
+    "title": "{{count}}-day streak!",
+    "description": "Keep it going with {{name}}."
   }
 }

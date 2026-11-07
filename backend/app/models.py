@@ -278,6 +278,9 @@ class Habit(db.Model):
 
         days = self.completed_days()
         today_ = today_ or datetime.now(timezone.utc).date()
+        # Zona horaria: si el usuario ya está en «mañana» respecto a UTC, su check de hoy cuenta para la racha.
+        if days and 0 < (max(days) - today_).days <= 1:
+            today_ = max(days)
         return {
             "id": self.id,
             "name": self.name,

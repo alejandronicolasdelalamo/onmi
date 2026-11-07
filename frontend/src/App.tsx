@@ -35,6 +35,11 @@ const GoalsPage = lazy(() =>
 const MoodPage = lazy(() =>
   import("@/features/mood/mood-page").then((m) => ({ default: m.MoodPage })),
 );
+const InsightsPage = lazy(() =>
+  import("@/features/insights/insights-page").then((m) => ({
+    default: m.InsightsPage,
+  })),
+);
 const PomodoroPage = lazy(() =>
   import("@/features/pomodoro/pomodoro-page").then((m) => ({
     default: m.PomodoroPage,
@@ -139,6 +144,7 @@ export function AppRoutes() {
           <Route path="goals" element={<GoalsPage />} />
           <Route path="mood" element={<MoodPage />} />
           <Route path="focus" element={<PomodoroPage />} />
+          <Route path="insights" element={<InsightsPage />} />
           <Route path="settings" element={<ProfilePage />} />
           <Route
             path="admin"

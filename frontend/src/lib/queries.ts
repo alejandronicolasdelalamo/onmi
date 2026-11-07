@@ -5,6 +5,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { api, qs } from "./api";
+import { celebrate, milestoneFor } from "./celebrate";
 import { localISODate } from "./utils";
 import type {
   AdminMetrics,
@@ -13,6 +14,7 @@ import type {
   Goal,
   Habit,
   HeatmapData,
+  Insights,
   MoodHistory,
   MoodKind,
   Note,
@@ -26,6 +28,7 @@ type List<T> = { items: T[] };
 
 export const keys = {
   dashboard: ["dashboard"] as const,
+  insights: ["insights"] as const,
   notes: (f?: object) => ["notes", f ?? {}] as const,
   tags: ["notes", "tags"] as const,
   projects: ["projects"] as const,
@@ -52,6 +55,15 @@ function useInvalidatingMutation<TVars, TData = unknown>(
     },
   });
 }
+
+// ---- insights ----------------------------------------------------------------
+export const useInsights = () => {
+  const today = localISODate();
+  return useQuery({
+    queryKey: [...keys.insights, today],
+    queryFn: () => api.get<Insights>(`/api/insights?today=${today}`),
+  });
+};
 
 // ---- dashboard ---------------------------------------------------------------
 export const useDashboard = () =>
@@ -198,7 +210,12 @@ export const useGoals = () =>
 export type GoalInput = Partial<
   Pick<Goal, "title" | "description" | "due_date" | "project_id" | "done">
 >;
-const goalKeys = [keys.goals, keys.projects, keys.dashboard] as const;
+const goalKeys = [
+  keys.goals,
+  keys.projects,
+  keys.dashboard,
+  keys.insights,
+] as const;
 export const useCreateGoal = () =>
   useInvalidatingMutation(
     (b: GoalInput) => api.post<Goal>("/api/goals", b),
@@ -239,7 +256,7 @@ export type HabitInput = Partial<
     "name" | "description" | "category" | "color" | "goal_id" | "archived"
   >
 >;
-const habitKeys = [keys.habits, keys.dashboard] as const;
+const habitKeys = [keys.habits, keys.dashboard, keys.insights] as const;
 export const useCreateHabit = () =>
   useInvalidatingMutation(
     (b: HabitInput) => api.post<Habit>("/api/habits", b),
@@ -297,6 +314,13 @@ export function useToggleHabit() {
       );
       return { prevHabits, prevDash };
     },
+    onSuccess: (habit, { date }) => {
+      const today = localISODate();
+      const completedToday =
+        (date ?? today) === today && habit.dates.includes(today);
+      const milestone = milestoneFor(habit.current_streak, completedToday);
+      if (milestone) celebrate(milestone, habit.name);
+    },
     onError: (_e, _v, ctx) => {
       ctx?.prevHabits.forEach(([key, data]) => qc.setQueryData(key, data));
       if (ctx?.prevDash) qc.setQueryData(keys.dashboard, ctx.prevDash);
@@ -304,6 +328,7 @@ export function useToggleHabit() {
     onSettled: () => {
       void qc.invalidateQueries({ queryKey: keys.habits });
       void qc.invalidateQueries({ queryKey: keys.dashboard });
+      void qc.invalidateQueries({ queryKey: keys.insights });
     },
   });
 }
@@ -318,7 +343,7 @@ export const useSetMood = () =>
   useInvalidatingMutation(
     (b: { mood: MoodKind; note?: string; date?: string }) =>
       api.put("/api/moods", { ...b, date: b.date ?? localISODate() }),
-    [keys.moods, keys.dashboard],
+    [keys.moods, keys.dashboard, keys.insights],
   );
 
 // ---- pomodoro ------------------------------------------------------------------
@@ -335,7 +360,7 @@ export const useSaveSession = () =>
       completed?: boolean;
       project_id?: number | null;
     }) => api.post("/api/pomodoro", b),
-    [keys.pomodoro, keys.dashboard],
+    [keys.pomodoro, keys.dashboard, keys.insights],
   );
 
 // ---- admin ---------------------------------------------------------------------

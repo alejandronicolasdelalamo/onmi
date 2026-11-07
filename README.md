@@ -33,6 +33,9 @@ ONMi es una app de productividad personal. Reúne en una sola interfaz lo que no
 - **Metas** que se enlazan con proyectos, hábitos y notas.
 - **Ánimo**: registro diario con historial de 30 días, distribución y un avatar que reacciona a cómo te sientes.
 - **Enfoque (Pomodoro)** con duración configurable, sonido y notificaciones, sesiones guardadas en el servidor y estadísticas.
+- **Insights**: conecta tus datos. Compara cada semana con la anterior (hábitos, enfoque, ánimo, metas) y detecta patrones, por ejemplo *«los días que corres, tu ánimo medio es 4,2 frente a 2,8»*. Es prudente: exige un mínimo de días en cada grupo, solo muestra efectos relevantes y lo presenta como patrón, no como causa.
+- **Primeros pasos** para cuentas nuevas, calculados con los datos reales, y **celebración de rachas** (7, 30, 100 días…) con confeti que respeta `prefers-reduced-motion`.
+- **Exportar mis datos** en JSON desde Ajustes.
 - **Panel de administración** con métricas de la plataforma y gestión de usuarios (roles, activar/desactivar, borrar).
 - Modo claro/oscuro, interfaz en **inglés y español**, **PWA instalable**, paleta de comandos (`Ctrl+K`) y un **modo demo** con datos de ejemplo.
 
@@ -44,6 +47,10 @@ ONMi es una app de productividad personal. Reúne en una sola interfaz lo que no
   <tr>
     <td><img src="docs/screenshots/notes-light.png" alt="Notas en modo claro" /></td>
     <td><img src="docs/screenshots/mood-light.png" alt="Seguimiento del ánimo" /></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/insights-light.png" alt="Insights: revisión semanal y patrones" /></td>
+    <td><img src="docs/screenshots/insights-dark.png" alt="Insights en modo oscuro" /></td>
   </tr>
   <tr>
     <td><img src="docs/screenshots/focus-light.png" alt="Temporizador de enfoque" /></td>
@@ -60,7 +67,7 @@ ONMi es una app de productividad personal. Reúne en una sola interfaz lo que no
 | Frontend | React 19, TypeScript, Vite, Tailwind CSS 4, componentes estilo shadcn/ui sobre Radix, TanStack Query, React Hook Form + Zod, dnd-kit, Recharts, cmdk, i18next |
 | Backend | Flask 3, SQLAlchemy 2, Flask-Migrate (Alembic), Flask-JWT-Extended, Flask-Limiter, Pydantic v2, Flask-Admin |
 | Datos | PostgreSQL en producción · SQLite en desarrollo y tests |
-| Calidad | pytest (36 tests, 93 % de cobertura), Vitest + Testing Library (34), Playwright E2E (22, incluida una auditoría de accesibilidad con axe-core), Ruff, ESLint, TypeScript estricto |
+| Calidad | pytest (50 tests, 93 % de cobertura), Vitest + Testing Library (40), Playwright E2E (27, incluida una auditoría de accesibilidad con axe-core), Ruff, ESLint, TypeScript estricto |
 | DevOps | Docker multi-stage, Docker Compose, GitHub Actions, blueprint de Render |
 
 ## Arquitectura
@@ -156,9 +163,9 @@ Crear un administrador: `flask create-admin tu@email.com`.
 ## Tests
 
 ```bash
-cd backend  && pytest --cov=app          # 36 tests
-cd frontend && npm test                  # 34 tests (Vitest)
-cd frontend && npx playwright install chromium && npm run e2e   # 22 tests de extremo a extremo (14 flujos + 8 de accesibilidad)
+cd backend  && pytest --cov=app          # 50 tests
+cd frontend && npm test                  # 40 tests (Vitest)
+cd frontend && npx playwright install chromium && npm run e2e   # 27 tests de extremo a extremo (19 flujos + 8 de accesibilidad)
 ```
 
 Los E2E arrancan solos una API con base de datos SQLite desechable y el servidor de Vite. Para regenerar las capturas de este
@@ -170,8 +177,8 @@ README: `SCREENSHOTS=1 npx playwright test screenshots`.
 onmi/
 ├── backend/
 │   ├── app/
-│   │   ├── api/          # blueprints: auth, notes, projects, goals, habits, wellbeing, dashboard, admin
-│   │   ├── services/     # stats (rachas), mail (consola/SendGrid), seed
+│   │   ├── api/          # blueprints: auth, notes, projects, goals, habits, wellbeing, dashboard, insights, admin
+│   │   ├── services/     # stats (rachas), insights (correlaciones), mail (consola/SendGrid), seed
 │   │   ├── models.py     # SQLAlchemy 2
 │   │   ├── schemas.py    # validación Pydantic
 │   │   └── openapi.py    # OpenAPI + Swagger UI generados desde los esquemas

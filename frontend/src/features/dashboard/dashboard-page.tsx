@@ -18,6 +18,7 @@ import { useDashboard, useSetMood, useToggleHabit } from "@/lib/queries";
 import { cn, localISODate } from "@/lib/utils";
 
 import { QueryError } from "@/components/query-error";
+import { GettingStarted } from "./getting-started";
 import { formatDate } from "@/lib/format";
 function greetingKey() {
   const h = new Date().getHours();
@@ -82,6 +83,7 @@ export function DashboardPage() {
         </div>
       ) : (
         <div className="space-y-6">
+          {!user?.is_demo && <GettingStarted data={data} />}
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             <Stat
               label={t("dashboard.habitsToday")}

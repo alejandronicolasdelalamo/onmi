@@ -149,3 +149,40 @@ export interface PublicConfig {
   google_client_id: string | null;
   demo_enabled: boolean;
 }
+
+export interface WeekWindow {
+  habit_completions: number;
+  habit_rate: number | null;
+  goals_done: number;
+  focus_minutes: number;
+  avg_mood: number | null;
+  mood_days: number;
+}
+
+export interface HabitEffect {
+  habit_id: number;
+  name: string;
+  color: string;
+  avg_with: number;
+  avg_without: number;
+  diff: number;
+  days_with: number;
+  days_without: number;
+}
+
+export interface Insights {
+  week: {
+    current: WeekWindow;
+    previous: WeekWindow;
+    deltas: {
+      habit_rate: number | null;
+      focus_minutes: number | null;
+      avg_mood: number | null;
+      goals_done: number;
+    };
+  };
+  habit_effects: HabitEffect[];
+  best_weekday: { weekday: number; completions: number; share: number } | null;
+  top_streak: { name: string; days: number } | null;
+  unlock: { mood_days: number; target: number };
+}

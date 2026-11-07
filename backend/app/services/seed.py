@@ -156,6 +156,7 @@ def seed_demo_data(user: User, seed: int = 7) -> None:
             )
         )
 
+    done_days: dict[str, set] = {}
     for name, cat, color, p in HABITS:
         habit = Habit(
             user_id=user.id,
@@ -173,19 +174,16 @@ def seed_demo_data(user: User, seed: int = 7) -> None:
             weekday_dip = day.weekday() >= 5 and name in {"Write code", "Read 20 pages"}
             if streak_alive or (not weekday_dip and rng.random() < p):
                 db.session.add(HabitLog(habit_id=habit.id, day=day))
+                done_days.setdefault(name, set()).add(day)
 
-    moods = [
-        MoodKind.HAPPY,
-        MoodKind.HAPPY,
-        MoodKind.NEUTRAL,
-        MoodKind.LOVE,
-        MoodKind.SAD,
-        MoodKind.MAD,
-        MoodKind.HAPPY,
-    ]
-    for back in range(0, 35):
-        if rng.random() < 0.85:
-            db.session.add(MoodEntry(user_id=user.id, day=t - timedelta(days=back), mood=rng.choice(moods)))
+    # El ánimo mejora los días que se sale a correr: así los insights del demo muestran un patrón creíble.
+    after_run = [MoodKind.LOVE, MoodKind.HAPPY, MoodKind.HAPPY, MoodKind.HAPPY, MoodKind.NEUTRAL]
+    no_run = [MoodKind.NEUTRAL, MoodKind.NEUTRAL, MoodKind.SAD, MoodKind.MAD, MoodKind.HAPPY]
+    ran = done_days.get("Morning run", set())
+    for back in range(0, 60):
+        day = t - timedelta(days=back)
+        if rng.random() < 0.9:
+            db.session.add(MoodEntry(user_id=user.id, day=day, mood=rng.choice(after_run if day in ran else no_run)))
 
     for back in range(0, 14):
         day = t - timedelta(days=back)

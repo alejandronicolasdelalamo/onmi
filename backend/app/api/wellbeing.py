@@ -44,7 +44,7 @@ def set_mood():
     user = current_user()
     data = parse_body(MoodIn)
     day = data.date or today()
-    if day > today():
+    if day > today() + timedelta(days=1):  # margen de zona horaria
         raise ApiError("Cannot record a future day", 422, "validation_error")
     entry = db.session.scalar(db.select(MoodEntry).filter_by(user_id=user.id, day=day))
     if entry is None:
