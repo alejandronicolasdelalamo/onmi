@@ -204,7 +204,7 @@ def seed_demo_data(user: User, seed: int = 7) -> None:
 def ensure_demo_user() -> User:
     user = db.session.scalar(db.select(User).filter_by(email=DEMO_EMAIL))
     if user is None:
-        user = User(name="Demo User", email=DEMO_EMAIL, is_demo=True, email_verified=True, avatar="male_happy")
+        user = User(name="Demo User", email=DEMO_EMAIL, is_demo=True, email_verified=True, avatar="male")
         db.session.add(user)
         db.session.commit()
     if not db.session.scalar(db.select(db.func.count(Habit.id)).filter_by(user_id=user.id)):

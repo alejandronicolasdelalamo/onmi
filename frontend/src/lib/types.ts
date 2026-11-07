@@ -1,0 +1,151 @@
+export type Role = "user" | "admin";
+export type MoodKind = "happy" | "love" | "neutral" | "mad" | "sad";
+export type ProjectStatus = "todo" | "in_progress" | "done";
+export type Priority = "low" | "medium" | "high";
+
+export interface User {
+  id: number;
+  name: string;
+  email: string;
+  role: Role;
+  avatar: string | null;
+  locale: "en" | "es";
+  email_verified: boolean;
+  is_demo: boolean;
+  has_password: boolean;
+  created_at: string;
+}
+
+export interface AdminUser extends User {
+  is_active: boolean;
+  last_login_at: string | null;
+}
+
+export interface Note {
+  id: number;
+  title: string;
+  content: string;
+  tags: string[];
+  pinned: boolean;
+  project_id: number | null;
+  goal_id: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Project {
+  id: number;
+  name: string;
+  description: string;
+  category: string | null;
+  status: ProjectStatus;
+  priority: Priority;
+  due_date: string | null;
+  position: number;
+  goals_total: number;
+  goals_done: number;
+  progress: number;
+  created_at: string;
+}
+
+export interface Goal {
+  id: number;
+  title: string;
+  description: string;
+  done: boolean;
+  due_date: string | null;
+  project_id: number | null;
+  habit_ids: number[];
+  completed_at: string | null;
+  created_at: string;
+}
+
+export interface Habit {
+  id: number;
+  name: string;
+  description: string;
+  category: string | null;
+  color: string;
+  archived: boolean;
+  goal_id: number | null;
+  dates: string[];
+  count: number;
+  current_streak: number;
+  longest_streak: number;
+  done_today: boolean;
+  created_at: string;
+}
+
+export interface HeatmapData {
+  series: { date: string; count: number }[];
+  habits: { id: number; name: string; color: string; rate_30d: number }[];
+  total_habits: number;
+}
+
+export interface MoodEntry {
+  id: number;
+  date: string;
+  mood: MoodKind;
+  note: string;
+}
+
+export interface MoodHistory {
+  items: MoodEntry[];
+  counts: Record<MoodKind, number>;
+  today: MoodEntry | null;
+}
+
+export interface PomodoroStats {
+  today_sessions: number;
+  today_minutes: number;
+  week_minutes: number;
+  total_sessions: number;
+  total_minutes: number;
+  series: { date: string; minutes: number }[];
+}
+
+export interface Dashboard {
+  habits: {
+    total: number;
+    done_today: number;
+    best_streak: number;
+    today: Habit[];
+    week: { date: string; count: number }[];
+  };
+  projects: { counts: Record<ProjectStatus, number>; active: Project[] };
+  notes: Note[];
+  goals: Goal[];
+  mood_today: MoodEntry | null;
+  focus_minutes_today: number;
+}
+
+export interface AdminMetrics {
+  users: {
+    total: number;
+    active: number;
+    admins: number;
+    verified: number;
+    new_7d: number;
+    active_7d: number;
+  };
+  content: {
+    notes: number;
+    projects: number;
+    habits: number;
+    moods: number;
+    pomodoros: number;
+  };
+  signups: { date: string; count: number }[];
+}
+
+export interface Paginated<T> {
+  items: T[];
+  page: number;
+  page_size: number;
+  total: number;
+}
+
+export interface PublicConfig {
+  google_client_id: string | null;
+  demo_enabled: boolean;
+}
