@@ -10,7 +10,7 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useId } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNewDialog } from "@/lib/use-new-dialog";
@@ -91,6 +91,7 @@ function HabitDialog({
         goal_id: z.string(),
         target_per_week: z.string(),
         reminder_time: z.string(),
+        shared: z.boolean(),
       }),
     [t],
   );
@@ -104,6 +105,7 @@ function HabitDialog({
       goal_id: "",
       target_per_week: "7",
       reminder_time: "",
+      shared: false,
     },
   });
 
@@ -117,10 +119,13 @@ function HabitDialog({
         goal_id: habit?.goal_id ? String(habit.goal_id) : "",
         target_per_week: String(habit?.target_per_week ?? 7),
         reminder_time: habit?.reminder_time ?? "",
+        shared: habit?.shared ?? false,
       });
   }, [open, habit, form]);
 
   const color = useWatch({ control: form.control, name: "color" });
+  const shared = useWatch({ control: form.control, name: "shared" });
+  const shareId = useId();
   const pending = create.isPending || update.isPending;
 
   const onSubmit = form.handleSubmit(async (v) => {
@@ -132,6 +137,7 @@ function HabitDialog({
       goal_id: v.goal_id ? Number(v.goal_id) : null,
       target_per_week: Number(v.target_per_week),
       reminder_time: v.reminder_time || null,
+      shared: v.shared,
     };
     try {
       if (habit) await update.mutateAsync({ id: habit.id, ...body });
@@ -197,6 +203,28 @@ function HabitDialog({
                 <Input type="time" {...p} {...form.register("reminder_time")} />
               )}
             </Field>
+          </div>
+          <div className="flex items-start justify-between gap-4 rounded-md border border-border p-3">
+            <div className="space-y-0.5">
+              <label
+                htmlFor={shareId}
+                className="block cursor-pointer text-sm font-medium"
+              >
+                {t("habits.share")}
+              </label>
+              <p
+                id={`${shareId}-hint`}
+                className="text-xs text-muted-foreground"
+              >
+                {t("habits.shareHint")}
+              </p>
+            </div>
+            <Switch
+              id={shareId}
+              aria-describedby={`${shareId}-hint`}
+              checked={shared}
+              onCheckedChange={(v) => form.setValue("shared", v)}
+            />
           </div>
           <div className="space-y-1.5">
             <p className="text-sm font-medium">{t("habits.color")}</p>

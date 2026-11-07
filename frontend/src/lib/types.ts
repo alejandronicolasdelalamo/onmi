@@ -70,6 +70,7 @@ export interface Habit {
   archived: boolean;
   goal_id: number | null;
   target_per_week: number;
+  shared: boolean;
   reminder_time: string | null;
   dates: string[];
   count: number;
@@ -213,4 +214,49 @@ export interface CoachStatus {
   can_enable: boolean;
   model: string | null;
   review: CoachReview | null;
+}
+
+export interface BuddyUser {
+  id: number;
+  name: string;
+  avatar: string | null;
+}
+
+export interface BuddyRelation {
+  friendship_id: number;
+  user: BuddyUser;
+  created_at: string;
+}
+
+export interface BuddyHabit {
+  id: number;
+  name: string;
+  color: string;
+  target_per_week: number;
+  streak: number;
+  streak_unit: "day" | "week";
+  done_today: boolean;
+  week_count: number;
+  last7: boolean[];
+}
+
+export interface BuddyFriend extends BuddyRelation {
+  habits: BuddyHabit[];
+  cheered_today: boolean;
+}
+
+export interface BuddyCheer {
+  id: number;
+  from: BuddyUser;
+  habit: string | null;
+  created_at: string;
+}
+
+export interface BuddiesData {
+  /** Código personal; null en la cuenta demo. */
+  code: string | null;
+  friends: BuddyFriend[];
+  incoming: BuddyRelation[];
+  outgoing: BuddyRelation[];
+  cheers: BuddyCheer[];
 }

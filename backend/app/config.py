@@ -6,7 +6,8 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-def _db_url() -> str:
+def database_url() -> str:
+    """URL de la base de datos según el entorno ACTUAL (se llama al crear la app, no al importar el módulo)."""
     url = os.getenv("DATABASE_URL")
     if not url:
         return f"sqlite:///{BASE_DIR / 'instance' / 'onmi.db'}"
@@ -16,7 +17,7 @@ def _db_url() -> str:
 class Config:
     ENV_NAME = "development"
     SECRET_KEY = os.getenv("SECRET_KEY") or secrets.token_hex(32)
-    SQLALCHEMY_DATABASE_URI = _db_url()
+    SQLALCHEMY_DATABASE_URI = database_url()  # valor por defecto; create_app lo vuelve a leer del entorno
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY") or secrets.token_hex(32)

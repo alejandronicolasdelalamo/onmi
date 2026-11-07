@@ -30,3 +30,27 @@ export function formatDate(
 export const isMac = () =>
   typeof navigator !== "undefined" &&
   /Mac|iPhone|iPad/.test(navigator.platform ?? "");
+
+const UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
+  ["day", 86_400],
+  ["hour", 3_600],
+  ["minute", 60],
+];
+
+/** "hace 3 h" / "3 hours ago" a partir de un instante ISO (el servidor envía UTC sin zona: se interpreta como UTC). */
+export function timeAgo(
+  iso: string,
+  locale: string = i18n.language,
+  now: number = Date.now(),
+): string {
+  const hasZone = /Z|[+-]\d\d:?\d\d$/.test(iso);
+  const seconds = Math.round(
+    (new Date(hasZone ? iso : `${iso}Z`).getTime() - now) / 1000,
+  );
+  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
+  for (const [unit, size] of UNITS) {
+    if (Math.abs(seconds) >= size)
+      return rtf.format(Math.round(seconds / size), unit);
+  }
+  return rtf.format(0, "second");
+}

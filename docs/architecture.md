@@ -131,6 +131,19 @@ erDiagram
         date day "UNIQUE(user_id, day)"
         enum mood "happy | love | neutral | mad | sad"
     }
+    FRIENDSHIPS {
+        int id PK
+        int requester_id FK
+        int addressee_id FK
+        string pair_key "UNIQUE: una fila por pareja"
+        enum status "pending | accepted"
+    }
+    CHEERS {
+        int id PK
+        int from_user_id FK
+        int to_user_id FK
+        date day "UNIQUE(from, to, day)"
+    }
     POMODORO_SESSIONS {
         int id PK
         string kind "work | break"
@@ -154,3 +167,6 @@ erDiagram
 | Temporizador por **hora de fin**, no restando 1 s por tick | Sigue siendo exacto con la pestaña en segundo plano. |
 | OpenAPI generado desde los esquemas Pydantic | La documentación en `/docs` no se desincroniza del código. |
 | Códigos de error estables (`error.code`) | El frontend traduce los mensajes por código; la API no depende del idioma. |
+| Compañeros: `pair_key` único (`menor-mayor`) y vista por **lista blanca** | Una sola relación por pareja aunque se pidan a la vez, y un compañero nunca recibe campos privados por descuido al añadir columnas. |
+| Hábitos **privados por defecto** (`shared = false`) | Compartir es una decisión explícita, hábito a hábito. |
+| Un ánimo al día por pareja (`UNIQUE(from, to, day)`) | La regla vive en la base de datos, así que no se salta con peticiones concurrentes. |

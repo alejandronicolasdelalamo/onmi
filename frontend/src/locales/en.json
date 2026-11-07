@@ -40,7 +40,8 @@
     "apiDocs": "API docs",
     "skip": "Skip to content",
     "menu": "Open menu",
-    "insights": "Insights"
+    "insights": "Insights",
+    "buddies": "Buddies"
   },
   "auth": {
     "tagline": "Organize your life, build lasting habits and keep track of your goals.",
@@ -144,7 +145,9 @@
     "weeklyShort": "{{done}}/{{target}} this week",
     "streakWeeks": "Streak (weeks)",
     "bestWeeks": "Best (weeks)",
-    "weekSuffix": "w"
+    "weekSuffix": "w",
+    "share": "Share with my buddies",
+    "shareHint": "They will see this habit's name, streak and progress. Never your notes or mood."
   },
   "notes": {
     "title": "Notes",
@@ -364,7 +367,12 @@
     "not_configured": "This feature is not configured on the server.",
     "required": "This field is required",
     "invalidEmail": "Enter a valid email address",
-    "passwordWeak": "Use 8+ characters mixing letters and numbers"
+    "passwordWeak": "Use 8+ characters mixing letters and numbers",
+    "invalid_code": "That code is not valid. Check it and try again.",
+    "own_code": "That is your own code. Give it to a friend instead.",
+    "already_connected": "You are already buddies.",
+    "already_pending": "Your request is already waiting for an answer.",
+    "already_cheered": "You already cheered this buddy today. Come back tomorrow."
   },
   "notFound": {
     "title": "Page not found",
@@ -462,5 +470,48 @@
     "provider": "Requests go to Anthropic's API ({{model}}).",
     "enabledToast": "AI coach enabled",
     "disabledToast": "AI coach turned off"
+  },
+  "buddies": {
+    "title": "Buddies",
+    "subtitle": "Keep each other going. You only share the habits you choose.",
+    "empty": "No buddies yet",
+    "emptyDesc": "Share your code with a friend, or enter theirs. Then pick which habits to share.",
+    "sharedCount_one": "Shares {{count}} habit",
+    "sharedCount_other": "Shares {{count}} habits",
+    "noShared": "{{name}} has not shared any habits yet.",
+    "doneToday": "Done today",
+    "last7": "Last 7 days",
+    "cheer": "Cheer {{name}}",
+    "cheerHabit": "Cheer {{name}} on for {{habit}}",
+    "cheeredToday": "Cheered today",
+    "cheerSent": "Cheer sent",
+    "options": "Options for {{name}}",
+    "remove": "Remove buddy",
+    "removeTitle": "Stop being buddies with {{name}}?",
+    "removeDesc": "You will no longer see each other's habits. Cheers between you are deleted. You can reconnect with a code.",
+    "cheersTitle": "Recent cheers",
+    "cheerFeed": "{{name}} cheered you on",
+    "cheerFeedHabit": "{{name}} cheered you on for {{habit}}",
+    "yourCode": "Your code",
+    "codeHint": "Give it to someone you trust. They send a request and you accept it.",
+    "copy": "Copy",
+    "copied": "Code copied",
+    "copyFailed": "Could not copy. Select the code and copy it by hand.",
+    "regenerate": "New code",
+    "regenerateTitle": "Generate a new code?",
+    "regenerateDesc": "The current code stops working. Buddies you already accepted are not affected.",
+    "codeRegenerated": "New code generated",
+    "demo": "The demo account is shared by all visitors, so it has no personal code. Create an account to connect with friends.",
+    "addTitle": "Add a buddy",
+    "codeLabel": "Their code",
+    "codeFieldHint": "Capitals, lowercase and dashes all work.",
+    "sendRequest": "Send request",
+    "requestSent": "Request sent to {{name}}",
+    "connected": "You and {{name}} are now buddies",
+    "incoming": "Requests for you",
+    "outgoing": "Waiting for an answer",
+    "accept": "Accept",
+    "decline": "Decline",
+    "cancel": "Cancel"
   }
 }

@@ -40,6 +40,7 @@ for (const theme of ["light", "dark"] as const) {
     await shot(page, "/mood", `mood-${theme}`, "How are you feeling today?");
     await shot(page, "/focus", `focus-${theme}`, "Sessions today");
     await shot(page, "/insights", `insights-${theme}`, "What your data says");
+    await shot(page, "/buddies", `buddies-${theme}`, "Sam Rivera");
   });
 }
 

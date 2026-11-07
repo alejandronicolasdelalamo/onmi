@@ -477,3 +477,83 @@ test.describe("coach semanal", () => {
     ).toBeVisible();
   });
 });
+
+test.describe("compañeros", () => {
+  test("dos personas conectan, comparten un hábito y se animan sin ver nada privado", async ({
+    browser,
+  }) => {
+    const ctxA = await browser.newContext();
+    const ctxB = await browser.newContext();
+    const a = await ctxA.newPage();
+    const b = await ctxB.newPage();
+    await register(a, "Ana Test");
+    await register(b, "Bruno Test");
+
+    // Ana crea un hábito compartido y otro privado.
+    await a.goto("/habits");
+    for (const [name, share] of [
+      ["Correr juntos", true],
+      ["Terapia privada", false],
+    ] as const) {
+      await a.getByRole("button", { name: "New habit" }).first().click();
+      await a.getByLabel("Name").fill(name);
+      if (share) await a.getByRole("switch").click();
+      const saved = a.waitForResponse(
+        (r) =>
+          r.url().endsWith("/api/habits") && r.request().method() === "POST",
+      );
+      await a.getByRole("button", { name: "Save" }).click();
+      await saved;
+    }
+
+    // Bruno pide conectar con el código de Ana (con otro formato) y ella acepta.
+    await a.goto("/buddies");
+    const code = (await a.getByLabel("Your code").textContent())!.trim();
+    expect(code).toMatch(/^[A-Z2-9]{4}-[A-Z2-9]{4}$/);
+    await b.goto("/buddies");
+    await b.getByLabel("Their code").fill(code.toLowerCase().replace("-", " "));
+    await b.getByRole("button", { name: "Send request" }).click();
+    await expect(b.getByText("Waiting for an answer")).toBeVisible();
+
+    await a.reload();
+    await a.getByRole("button", { name: "Accept" }).click();
+    await expect(a.getByText("Bruno Test")).toBeVisible();
+
+    // Bruno solo ve el hábito compartido y puede animar una vez al día.
+    await b.reload();
+    await expect(b.getByText("Correr juntos")).toBeVisible();
+    await expect(b.getByText("Terapia privada")).toHaveCount(0);
+    await b
+      .getByRole("button", { name: "Cheer Ana Test on", exact: false })
+      .last()
+      .click();
+    await expect(
+      b.getByRole("button", { name: "Cheered today" }),
+    ).toBeDisabled();
+
+    await a.reload();
+    await expect(a.getByText("Bruno Test cheered you on")).toBeVisible();
+
+    await ctxA.close();
+    await ctxB.close();
+  });
+
+  test("un código inválido da un error claro", async ({ page }) => {
+    await register(page);
+    await page.goto("/buddies");
+    await page.getByLabel("Their code").fill("ZZZZ-ZZZZ");
+    await page.getByRole("button", { name: "Send request" }).click();
+    await expect(page.getByText("That code is not valid")).toBeVisible();
+  });
+
+  test("la cuenta demo ve compañeros de ejemplo pero no tiene código", async ({
+    page,
+  }) => {
+    await page.goto("/login");
+    await page.getByRole("button", { name: "Try the demo" }).click();
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("Demo");
+    await page.goto("/buddies");
+    await expect(page.getByText("Sam Rivera").first()).toBeVisible();
+    await expect(page.getByText(/no personal code/i)).toBeVisible();
+  });
+});

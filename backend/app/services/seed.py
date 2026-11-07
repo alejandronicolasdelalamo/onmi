@@ -7,6 +7,8 @@ from datetime import datetime, time, timedelta
 
 from ..extensions import db
 from ..models import (
+    Cheer,
+    Friendship,
     Goal,
     Habit,
     HabitLog,
@@ -19,7 +21,7 @@ from ..models import (
     ProjectStatus,
     User,
 )
-from ..utils import today
+from ..utils import today, utcnow
 
 DEMO_EMAIL = "demo@onmi.app"
 
@@ -157,6 +159,7 @@ def seed_demo_data(user: User, seed: int = 7) -> None:
         )
 
     done_days: dict[str, set] = {}
+    demo_habits: dict[str, Habit] = {}
     for name, cat, color, p in HABITS:
         habit = Habit(
             user_id=user.id,
@@ -164,11 +167,13 @@ def seed_demo_data(user: User, seed: int = 7) -> None:
             category=cat,
             color=color,
             target_per_week=4 if name == "Meditate" else 7,
+            shared=name in {"Morning run", "Write code"},
             reminder_time="21:00" if name == "Meditate" else None,
             goal_id=goals[4].id if name == "Morning run" else None,
         )
         db.session.add(habit)
         db.session.flush()
+        demo_habits[name] = habit
         for back in range(0, 110):
             day = t - timedelta(days=back)
             # racha viva reciente + ruido realista antes
@@ -200,7 +205,46 @@ def seed_demo_data(user: User, seed: int = 7) -> None:
                     started_at=start,
                 )
             )
+    _seed_buddy(user, demo_habits, rng, t)
     db.session.commit()
+
+
+def _seed_buddy(user: User, demo_habits: dict[str, Habit], rng: random.Random, t) -> None:
+    """Un compañero de ejemplo ya aceptado, con un hábito privado para mostrar qué NO se comparte."""
+    sam = User(
+        name="Sam Rivera",
+        email="sam@demo.onmi.app",
+        is_demo=True,
+        email_verified=True,
+        avatar="female",
+    )
+    db.session.add(sam)
+    db.session.flush()
+    for name, color, p, shared, target in [
+        ("Read 20 pages", "#6366f1", 0.85, True, 7),
+        ("Morning run", "#f97316", 0.65, True, 3),
+        ("Meditate", "#14b8a6", 0.5, False, 7),  # privado: el demo nunca lo ve
+    ]:
+        habit = Habit(user_id=sam.id, name=name, color=color, shared=shared, target_per_week=target)
+        db.session.add(habit)
+        db.session.flush()
+        for back in range(0, 60):
+            if (name == "Read 20 pages" and back < 9) or rng.random() < p:
+                db.session.add(HabitLog(habit_id=habit.id, day=t - timedelta(days=back)))
+    db.session.add(
+        Friendship(
+            requester_id=sam.id,
+            addressee_id=user.id,
+            pair_key=Friendship.key_for(sam.id, user.id),
+            status="accepted",
+            accepted_at=utcnow(),
+        )
+    )
+    db.session.add(
+        Cheer(
+            from_user_id=sam.id, to_user_id=user.id, habit_id=demo_habits["Morning run"].id, day=t - timedelta(days=1)
+        )
+    )
 
 
 def ensure_demo_user() -> User:

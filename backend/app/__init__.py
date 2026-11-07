@@ -9,7 +9,7 @@ from pathlib import Path
 from flask import Flask, abort, jsonify, send_from_directory
 from werkzeug.exceptions import HTTPException
 
-from .config import get_config
+from .config import database_url, get_config
 from .extensions import cors, db, jwt, limiter, migrate
 from .openapi import init_openapi
 from .utils import ApiError
@@ -19,6 +19,9 @@ def create_app(config_name: str | None = None) -> Flask:
     app = Flask(__name__, instance_relative_config=True)
     cfg = get_config(config_name)
     app.config.from_object(cfg() if callable(cfg) else cfg)
+    if cfg.ENV_NAME != "testing":
+        # Releer DATABASE_URL ahora: así los tests y comandos pueden apuntar a otra base sin tocar la de desarrollo.
+        app.config["SQLALCHEMY_DATABASE_URI"] = database_url()
     app.url_map.strict_slashes = False
     os.makedirs(app.instance_path, exist_ok=True)
 

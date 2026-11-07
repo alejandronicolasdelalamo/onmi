@@ -14,6 +14,8 @@ const APP_ROUTES = [
   "/goals",
   "/mood",
   "/focus",
+  "/insights",
+  "/buddies",
   "/settings",
 ];
 

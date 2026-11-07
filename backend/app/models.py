@@ -72,6 +72,8 @@ class User(db.Model):
     timezone: Mapped[str] = mapped_column(String(64), default="UTC", server_default="UTC")
     # Opt-in: el coach semanal se redacta con Claude (datos agregados). Desactivado = redactor local.
     ai_coach_enabled: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
+    # Código personal para que otras personas te pidan ser compañeros de hábitos (se puede regenerar).
+    invite_code: Mapped[str | None] = mapped_column(String(12), unique=True)
     is_demo: Mapped[bool] = mapped_column(Boolean, default=False)
     failed_logins: Mapped[int] = mapped_column(Integer, default=0)
     locked_until: Mapped[datetime | None] = mapped_column(DateTime)
@@ -88,6 +90,15 @@ class User(db.Model):
     push_subscriptions: Mapped[list[PushSubscription]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
+    # Al borrar la cuenta desaparecen sus relaciones y ánimos aunque la base no aplique ON DELETE CASCADE (SQLite).
+    friendships_requested: Mapped[list[Friendship]] = relationship(
+        foreign_keys="Friendship.requester_id", cascade="all, delete-orphan"
+    )
+    friendships_received: Mapped[list[Friendship]] = relationship(
+        foreign_keys="Friendship.addressee_id", cascade="all, delete-orphan"
+    )
+    cheers_sent: Mapped[list[Cheer]] = relationship(foreign_keys="Cheer.from_user_id", cascade="all, delete-orphan")
+    cheers_received: Mapped[list[Cheer]] = relationship(foreign_keys="Cheer.to_user_id", cascade="all, delete-orphan")
 
     def set_password(self, password: str) -> None:
         self.password_hash = generate_password_hash(password)
@@ -271,6 +282,8 @@ class Habit(db.Model):
     archived: Mapped[bool] = mapped_column(Boolean, default=False)
     # Frecuencia: 7 = todos los días; 1-6 = tantas veces por semana (la racha se cuenta en semanas).
     target_per_week: Mapped[int] = mapped_column(Integer, default=7, server_default="7")
+    # Visible para tus compañeros aceptados (solo nombre, color, racha y progreso). Apagado por defecto.
+    shared: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
     reminder_time: Mapped[str | None] = mapped_column(String(5))  # "HH:MM" en la zona horaria del usuario
     last_reminded_on: Mapped[date | None] = mapped_column(Date)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
@@ -302,6 +315,7 @@ class Habit(db.Model):
             "archived": self.archived,
             "goal_id": self.goal_id,
             "target_per_week": self.target_per_week,
+            "shared": self.shared,
             "reminder_time": self.reminder_time,
             "dates": [d.isoformat() for d in days],
             "count": len(days),
@@ -403,3 +417,38 @@ class CoachReview(db.Model):
             "week_start": self.week_start.isoformat(),
             "created_at": self.created_at.isoformat(),
         }
+
+
+class Friendship(db.Model):
+    """Relación entre dos personas. Una fila por pareja; pendiente hasta que acepta quien dio el código."""
+
+    __tablename__ = "friendships"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    requester_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    addressee_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    pair_key: Mapped[str] = mapped_column(String(32), unique=True)  # "menor-mayor": impide duplicados cruzados
+    status: Mapped[str] = mapped_column(String(10), default="pending")  # pending | accepted
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+    accepted_at: Mapped[datetime | None] = mapped_column(DateTime)
+
+    @staticmethod
+    def key_for(a: int, b: int) -> str:
+        return f"{min(a, b)}-{max(a, b)}"
+
+    def other_id(self, me: int) -> int:
+        return self.addressee_id if self.requester_id == me else self.requester_id
+
+
+class Cheer(db.Model):
+    """Ánimo enviado a un compañero. Como mucho uno por día y pareja (evita el acoso por notificaciones)."""
+
+    __tablename__ = "cheers"
+    __table_args__ = (UniqueConstraint("from_user_id", "to_user_id", "day", name="uq_cheer_pair_day"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    from_user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    to_user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    habit_id: Mapped[int | None] = mapped_column(ForeignKey("habits.id", ondelete="SET NULL"))
+    day: Mapped[date] = mapped_column(Date)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)

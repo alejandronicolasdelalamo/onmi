@@ -40,7 +40,8 @@
     "apiDocs": "Docs de la API",
     "skip": "Saltar al contenido",
     "menu": "Abrir menú",
-    "insights": "Insights"
+    "insights": "Insights",
+    "buddies": "Compañeros"
   },
   "auth": {
     "tagline": "Organiza tu vida, crea hábitos duraderos y haz seguimiento de tus metas.",
@@ -144,7 +145,9 @@
     "weeklyShort": "{{done}}/{{target}} esta semana",
     "streakWeeks": "Racha (semanas)",
     "bestWeeks": "Mejor (semanas)",
-    "weekSuffix": " sem"
+    "weekSuffix": " sem",
+    "share": "Compartir con mis compañeros",
+    "shareHint": "Verán el nombre, la racha y el progreso de este hábito. Nunca tus notas ni tu ánimo."
   },
   "notes": {
     "title": "Notas",
@@ -364,7 +367,12 @@
     "not_configured": "Esta función no está configurada en el servidor.",
     "required": "Este campo es obligatorio",
     "invalidEmail": "Introduce un correo válido",
-    "passwordWeak": "Usa 8+ caracteres mezclando letras y números"
+    "passwordWeak": "Usa 8+ caracteres mezclando letras y números",
+    "invalid_code": "Ese código no es válido. Compruébalo e inténtalo de nuevo.",
+    "own_code": "Ese es tu propio código. Pásaselo a un amigo.",
+    "already_connected": "Ya sois compañeros.",
+    "already_pending": "Tu solicitud ya está esperando respuesta.",
+    "already_cheered": "Ya has animado hoy a este compañero. Vuelve mañana."
   },
   "notFound": {
     "title": "Página no encontrada",
@@ -462,5 +470,48 @@
     "provider": "Las peticiones van a la API de Anthropic ({{model}}).",
     "enabledToast": "Coach con IA activado",
     "disabledToast": "Coach con IA desactivado"
+  },
+  "buddies": {
+    "title": "Compañeros",
+    "subtitle": "Ayudaos a no fallar. Solo compartes los hábitos que elijas.",
+    "empty": "Aún no tienes compañeros",
+    "emptyDesc": "Pasa tu código a un amigo o introduce el suyo. Después elige qué hábitos compartir.",
+    "sharedCount_one": "Comparte {{count}} hábito",
+    "sharedCount_other": "Comparte {{count}} hábitos",
+    "noShared": "{{name}} aún no ha compartido ningún hábito.",
+    "doneToday": "Hecho hoy",
+    "last7": "Últimos 7 días",
+    "cheer": "Animar a {{name}}",
+    "cheerHabit": "Animar a {{name}} con {{habit}}",
+    "cheeredToday": "Animado hoy",
+    "cheerSent": "Ánimo enviado",
+    "options": "Opciones de {{name}}",
+    "remove": "Quitar compañero",
+    "removeTitle": "¿Dejar de ser compañero de {{name}}?",
+    "removeDesc": "Dejaréis de ver los hábitos del otro y se borran los ánimos entre vosotros. Podéis volver a conectar con un código.",
+    "cheersTitle": "Ánimos recientes",
+    "cheerFeed": "{{name}} te ha animado",
+    "cheerFeedHabit": "{{name}} te ha animado con {{habit}}",
+    "yourCode": "Tu código",
+    "codeHint": "Dáselo a alguien de confianza. Te envía una solicitud y tú la aceptas.",
+    "copy": "Copiar",
+    "copied": "Código copiado",
+    "copyFailed": "No se pudo copiar. Selecciona el código y cópialo a mano.",
+    "regenerate": "Código nuevo",
+    "regenerateTitle": "¿Generar un código nuevo?",
+    "regenerateDesc": "El código actual deja de funcionar. Los compañeros que ya aceptaste no se ven afectados.",
+    "codeRegenerated": "Código nuevo generado",
+    "demo": "La cuenta demo la comparten todos los visitantes, así que no tiene código personal. Crea una cuenta para conectar con amigos.",
+    "addTitle": "Añadir compañero",
+    "codeLabel": "Su código",
+    "codeFieldHint": "Valen mayúsculas, minúsculas y guiones.",
+    "sendRequest": "Enviar solicitud",
+    "requestSent": "Solicitud enviada a {{name}}",
+    "connected": "Tú y {{name}} ya sois compañeros",
+    "incoming": "Solicitudes para ti",
+    "outgoing": "Esperando respuesta",
+    "accept": "Aceptar",
+    "decline": "Rechazar",
+    "cancel": "Cancelar"
   }
 }

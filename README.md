@@ -36,6 +36,7 @@ ONMi es una app de productividad personal. Reúne en una sola interfaz lo que no
 - **Enfoque (Pomodoro)** con duración configurable, sonido y notificaciones, sesiones guardadas en el servidor y estadísticas.
 - **Insights**: conecta tus datos. Compara cada semana con la anterior (hábitos, enfoque, ánimo, metas) y detecta patrones, por ejemplo *«los días que corres, tu ánimo medio es 4,2 frente a 2,8»*. Es prudente: exige un mínimo de días en cada grupo, solo muestra efectos relevantes y lo presenta como patrón, no como causa.
 - **Coach semanal**: una revisión escrita de tu semana (qué fue bien, en qué fijarte y una sugerencia). Por defecto la redacta el servidor con plantillas, sin enviar nada fuera. Si el administrador configura una clave y **tú lo activas** en Ajustes, la escribe Claude a partir de datos agregados; si Claude falla, vuelve a la versión local sin errores.
+- **Compañeros de hábitos**: conecta con amigos mediante un código personal (se acepta la solicitud, y se puede regenerar). Cada hábito es **privado por defecto**; solo ves de un compañero los hábitos que él marcó como compartidos (nombre, racha y progreso), nunca sus notas, su ánimo ni su correo. Puedes animarle una vez al día, con aviso push opcional.
 - **Primeros pasos** para cuentas nuevas, calculados con los datos reales, y **celebración de rachas** (7, 30, 100 días…) con confeti que respeta `prefers-reduced-motion`.
 - **Exportar mis datos** en JSON desde Ajustes.
 - **App nativa** (iOS y Android) con Expo y React Native en [`mobile/`](mobile/README.md): Hoy, hábitos, notas y ajustes sobre la misma API, con sesión por tokens en el almacén seguro del sistema y modo claro/oscuro.
@@ -56,6 +57,10 @@ ONMi es una app de productividad personal. Reúne en una sola interfaz lo que no
     <td><img src="docs/screenshots/insights-dark.png" alt="Insights en modo oscuro" /></td>
   </tr>
   <tr>
+    <td><img src="docs/screenshots/buddies-light.png" alt="Compañeros de hábitos" /></td>
+    <td><img src="docs/screenshots/buddies-dark.png" alt="Compañeros en modo oscuro" /></td>
+  </tr>
+  <tr>
     <td><img src="docs/screenshots/focus-light.png" alt="Temporizador de enfoque" /></td>
     <td><img src="docs/screenshots/login-dark.png" alt="Pantalla de acceso" /></td>
   </tr>
@@ -70,7 +75,7 @@ ONMi es una app de productividad personal. Reúne en una sola interfaz lo que no
 | Frontend | React 19, TypeScript, Vite, Tailwind CSS 4, componentes estilo shadcn/ui sobre Radix, TanStack Query, React Hook Form + Zod, dnd-kit, Recharts, cmdk, i18next |
 | Backend | Flask 3, SQLAlchemy 2, Flask-Migrate (Alembic), Flask-JWT-Extended, Flask-Limiter, Pydantic v2, Flask-Admin |
 | Datos | PostgreSQL en producción · SQLite en desarrollo y tests |
-| Calidad | pytest (113 tests, 94 % de cobertura), Vitest + Testing Library (58), Jest en la app móvil (26), Playwright E2E (36, incluida una auditoría de accesibilidad con axe-core), Ruff, ESLint, TypeScript estricto |
+| Calidad | pytest (146 tests, 95 % de cobertura), Vitest + Testing Library (61), Jest en la app móvil (26), Playwright E2E (39, incluida una auditoría de accesibilidad con axe-core), Ruff, ESLint, TypeScript estricto |
 | DevOps | Docker multi-stage, Docker Compose, GitHub Actions, blueprint de Render |
 
 ## Arquitectura
@@ -178,6 +183,17 @@ revisión se guarda por semana (no se regenera sin motivo) y regenerarla tiene u
 > Con una clave real no se ha podido probar en este entorno: el flujo está cubierto con un cliente simulado que comprueba los
 > parámetros enviados, que no se filtra nada privado y los tres modos de fallo.
 
+### Compañeros: qué se comparte
+
+- Conectar exige **dos pasos**: quien pide introduce tu código y **tú aceptas**. Un código inválido responde siempre igual (no revela
+  qué códigos existen), tiene 8 caracteres de un alfabeto sin confusiones (~40 bits) y pedirlo está limitado a 10 por hora.
+- La vista de un compañero se construye con una lista blanca (`id`, `name`, `avatar` y, por hábito compartido, nombre, color, racha y
+  progreso). Los tests comprueban que no aparecen notas, ánimo, proyectos ni correo, y que dejar de compartir o archivar un hábito
+  lo oculta al instante.
+- Un ánimo por día y compañero (restricción única en base de datos) evita el acoso por notificaciones; el aviso push es opcional y
+  su fallo nunca rompe el ánimo. Dejar de ser compañeros borra los ánimos entre ambos, y borrar la cuenta limpia relaciones y ánimos.
+- La cuenta demo ve a un compañero de ejemplo (con un hábito privado que no se muestra) pero no tiene código ni puede cambiar nada.
+
 ### Recordatorios de hábitos
 
 1. Genera las claves: `flask --app wsgi generate-vapid` y pon `VAPID_PUBLIC_KEY` y `VAPID_PRIVATE_KEY` en el entorno.
@@ -192,10 +208,10 @@ revisión se guarda por semana (no se regenera sin motivo) y regenerarla tiene u
 ## Tests
 
 ```bash
-cd backend  && pytest --cov=app          # 113 tests
-cd frontend && npm test                  # 58 tests (Vitest)
+cd backend  && pytest --cov=app          # 146 tests
+cd frontend && npm test                  # 61 tests (Vitest)
 cd mobile   && npm test                  # 26 tests (Jest) + `npm run export:android` para validar el bundle
-cd frontend && npx playwright install chromium && npm run e2e   # 36 tests de extremo a extremo (28 flujos + 8 de accesibilidad)
+cd frontend && npx playwright install chromium && npm run e2e   # 39 tests de extremo a extremo (31 flujos + 8 de accesibilidad)
 ```
 
 Los E2E arrancan solos una API con base de datos SQLite desechable y el servidor de Vite. Para regenerar las capturas de este
@@ -207,7 +223,7 @@ README: `SCREENSHOTS=1 npx playwright test screenshots`.
 onmi/
 ├── backend/
 │   ├── app/
-│   │   ├── api/          # blueprints: auth, notes, projects, goals, habits, wellbeing, dashboard, insights, admin
+│   │   ├── api/          # blueprints: auth, notes, projects, goals, habits, wellbeing, dashboard, insights, coach, push, buddies, admin
 │   │   ├── services/     # stats (rachas), insights (correlaciones), mail (consola/SendGrid), seed
 │   │   ├── models.py     # SQLAlchemy 2
 │   │   ├── schemas.py    # validación Pydantic

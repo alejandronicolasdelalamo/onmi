@@ -11,6 +11,7 @@ const TITLES: Record<string, string> = {
   "/mood": "nav.mood",
   "/focus": "nav.focus",
   "/insights": "nav.insights",
+  "/buddies": "nav.buddies",
   "/settings": "nav.profile",
   "/admin": "nav.admin",
   "/login": "auth.signIn",

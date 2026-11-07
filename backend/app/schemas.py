@@ -123,6 +123,7 @@ ReminderTime = Annotated[str, StringConstraints(pattern=r"^([01]\d|2[0-3]):[0-5]
 
 class HabitIn(Base):
     name: str = Field(min_length=1, max_length=100)
+    shared: bool = False
     target_per_week: int = Field(default=7, ge=1, le=7)
     reminder_time: ReminderTime | None = None
     description: str = Field(default="", max_length=500)
@@ -133,6 +134,7 @@ class HabitIn(Base):
 
 class HabitUpdate(Base):
     name: str | None = Field(default=None, min_length=1, max_length=100)
+    shared: bool | None = None
     target_per_week: int | None = Field(default=None, ge=1, le=7)
     reminder_time: ReminderTime | None = None
     description: str | None = Field(default=None, max_length=500)
@@ -181,3 +183,11 @@ class PushUnsubscribeIn(Base):
 
 class CoachGenerateIn(Base):
     refresh: bool = False
+
+
+class BuddyRequestIn(Base):
+    code: str = Field(min_length=4, max_length=20)
+
+
+class CheerIn(Base):
+    habit_id: int | None = None
