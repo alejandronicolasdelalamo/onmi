@@ -60,3 +60,24 @@ def test_error_shape_and_health(client):
     assert r.status_code == 404 and r.get_json()["error"]["code"] == "not_found"
     assert client.get("/api/health").get_json() == {"status": "ok"}
     assert client.get("/api/health").headers["X-Content-Type-Options"] == "nosniff"
+
+
+def test_spa_is_served_with_history_fallback(tmp_path, monkeypatch):
+    from app import create_app
+
+    (tmp_path / "assets").mkdir()
+    (tmp_path / "index.html").write_text("<div id=root>SPA</div>")
+    (tmp_path / "assets" / "app-abc123.js").write_text("console.log(1)")
+    monkeypatch.setenv("FRONTEND_DIST", str(tmp_path))
+    client = create_app("testing").test_client()
+
+    assert b"SPA" in client.get("/").data
+    deep = client.get("/habits/anything")  # ruta del router de React
+    assert deep.status_code == 200 and b"SPA" in deep.data
+    assert deep.headers["Cache-Control"] == "no-cache"
+    asset = client.get("/assets/app-abc123.js")
+    assert "immutable" in asset.headers["Cache-Control"]
+    # La API y la documentación no se tragan por el fallback.
+    assert client.get("/api/health").get_json() == {"status": "ok"}
+    assert client.get("/api/does-not-exist").get_json()["error"]["code"] == "not_found"
+    assert client.get("/docs").status_code == 200 and b"swagger" in client.get("/docs").data.lower()

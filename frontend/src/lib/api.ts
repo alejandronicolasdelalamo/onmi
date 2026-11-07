@@ -86,6 +86,7 @@ async function request<T>(
   if (
     res.status === 401 &&
     !retried &&
+    cookie("csrf_refresh_token") && // sin cookie de refresh no hay nada que renovar
     !NO_REFRESH.some((p) => path.startsWith(p))
   ) {
     if (await refreshSession()) return request<T>(method, path, body, true);

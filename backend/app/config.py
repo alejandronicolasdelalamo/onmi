@@ -37,7 +37,7 @@ class Config:
     DEMO_ENABLED = os.getenv("DEMO_ENABLED", "true").lower() == "true"
 
     RATELIMIT_STORAGE_URI = os.getenv("RATELIMIT_STORAGE_URI", "memory://")
-    RATELIMIT_ENABLED = True
+    RATELIMIT_ENABLED = os.getenv("RATELIMIT_ENABLED", "true").lower() == "true"
     MAX_FAILED_LOGINS = 5
     LOCKOUT_MINUTES = 15
     REQUIRE_EMAIL_VERIFICATION = False
@@ -45,7 +45,8 @@ class Config:
 
 class ProductionConfig(Config):
     ENV_NAME = "production"
-    JWT_COOKIE_SECURE = True
+    # `true` por defecto; ponlo a `false` solo si pruebas en HTTP plano fuera de localhost.
+    JWT_COOKIE_SECURE = os.getenv("COOKIE_SECURE", "true").lower() == "true"
 
     def __init__(self):
         for key in ("SECRET_KEY", "JWT_SECRET_KEY", "DATABASE_URL"):

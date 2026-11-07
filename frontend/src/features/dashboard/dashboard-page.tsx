@@ -31,7 +31,10 @@ function WeekBars({ data }: { data: { date: string; count: number }[] }) {
       aria-label="Weekly activity"
     >
       {data.map((d) => (
-        <div key={d.date} className="flex flex-1 flex-col items-center gap-1.5">
+        <div
+          key={d.date}
+          className="flex h-full flex-1 flex-col items-center justify-end gap-1.5"
+        >
           <div
             className={cn(
               "w-full rounded-t-md transition-all",
@@ -67,14 +70,14 @@ export function DashboardPage() {
       />
 
       {isPending || !data ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {Array.from({ length: 4 }, (_, i) => (
             <Skeleton key={i} className="h-24" />
           ))}
         </div>
       ) : (
         <div className="space-y-6">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             <Stat
               label={t("dashboard.habitsToday")}
               value={`${data.habits.today.filter((h) => h.dates.includes(today)).length}/${data.habits.total}`}

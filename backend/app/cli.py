@@ -7,8 +7,11 @@ from .models import Role, User
 
 def register_cli(app: Flask) -> None:
     @app.cli.command("init-db")
-    def init_db():
+    @click.option("--reset", is_flag=True, help="Borra todas las tablas antes de crearlas (solo desarrollo/tests).")
+    def init_db(reset):
         """Crea las tablas (útil en local; en producción usa `flask db upgrade`)."""
+        if reset:
+            db.drop_all()
         db.create_all()
         click.echo("Tablas creadas.")
 

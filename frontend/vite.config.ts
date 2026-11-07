@@ -29,7 +29,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        navigateFallbackDenylist: [/^\/api/, /^\/docs/, /^\/admin/],
+        navigateFallbackDenylist: [/^\/api/, /^\/docs/, /^\/db-admin/],
         globPatterns: ["**/*.{js,css,html,svg,png,woff2}"],
         runtimeCaching: [
           {
@@ -46,7 +46,7 @@ export default defineConfig({
     proxy: {
       "/api": { target: API_TARGET, changeOrigin: true },
       "/docs": { target: API_TARGET, changeOrigin: true },
-      "/admin": { target: API_TARGET, changeOrigin: true },
+      "/db-admin": { target: API_TARGET, changeOrigin: true },
     },
   },
   build: {

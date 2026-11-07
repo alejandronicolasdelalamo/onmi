@@ -1,6 +1,6 @@
-"""Panel interno Flask-Admin en /admin, solo para usuarios con rol admin (cookie JWT)."""
+"""Panel interno Flask-Admin en /db-admin (/admin es la ruta del panel React), solo para admins (cookie JWT)."""
 
-from flask import redirect, request
+from flask import redirect
 from flask_admin import Admin, AdminIndexView
 from flask_admin.contrib.sqla import ModelView
 from flask_jwt_extended import get_jwt_identity, verify_jwt_in_request
@@ -23,7 +23,7 @@ class _Secure:
         return _is_admin()
 
     def inaccessible_callback(self, name, **kwargs):
-        return redirect("/api/docs?admin=required")
+        return redirect("/login")
 
 
 class SecureIndex(_Secure, AdminIndexView):
@@ -41,8 +41,7 @@ class SecureView(_Secure, ModelView):
 
 
 def setup_admin(app):
-    admin = Admin(app, name="ONMi Admin", index_view=SecureIndex(url="/admin"))
+    admin = Admin(app, name="ONMi Admin", url="/db-admin", index_view=SecureIndex(url="/db-admin"))
     admin.add_view(UserView(User, db.session))
     for model in (Note, Project, Goal, Habit, MoodEntry, PomodoroSession):
         admin.add_view(SecureView(model, db.session))
-    _ = request  # noqa: F841

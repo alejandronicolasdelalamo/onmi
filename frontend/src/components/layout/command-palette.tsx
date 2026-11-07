@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/lib/auth";
+import { useAuth, useSetLanguage } from "@/lib/auth";
 import i18n, { LANGUAGES } from "@/lib/i18n";
 import { useTheme } from "@/lib/theme";
 import { NAV } from "./nav";
@@ -29,6 +29,7 @@ export function CommandPalette({
   const navigate = useNavigate();
   const { toggle } = useTheme();
   const { user } = useAuth();
+  const setLanguage = useSetLanguage();
 
   const run = (fn: () => void) => () => {
     onOpenChange(false);
@@ -95,11 +96,8 @@ export function CommandPalette({
                 </Command.Item>
                 <Command.Item
                   className={itemClass}
-                  onSelect={run(
-                    () =>
-                      void i18n.changeLanguage(
-                        LANGUAGES.find((l) => l !== lang)!,
-                      ),
+                  onSelect={run(() =>
+                    setLanguage(LANGUAGES.find((l) => l !== lang)!),
                   )}
                 >
                   <Languages /> {t("palette.switchLanguage")}

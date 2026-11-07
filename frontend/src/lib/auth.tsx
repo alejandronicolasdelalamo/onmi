@@ -1,4 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type QueryClient,
+} from "@tanstack/react-query";
 import {
   createContext,
   useCallback,
@@ -24,6 +29,31 @@ interface AuthCtx {
 
 const Ctx = createContext<AuthCtx | null>(null);
 export const ME_KEY = ["me"] as const;
+
+/** Borra los datos del usuario anterior pero conserva la query de sesión (`me`) y su observador. */
+function resetUserData(qc: QueryClient) {
+  qc.removeQueries({
+    predicate: (q) =>
+      q.queryKey[0] !== ME_KEY[0] && q.queryKey[0] !== "public-config",
+  });
+}
+
+/** Cambia el idioma y, si hay sesión, lo guarda en el perfil para que sobreviva a recargas. */
+export function useSetLanguage() {
+  const { user, setUser } = useAuth();
+  return useCallback(
+    (locale: "en" | "es") => {
+      void i18n.changeLanguage(locale);
+      if (user && user.locale !== locale) {
+        setUser({ ...user, locale });
+        api
+          .patch<{ user: User }>("/api/auth/me", { locale })
+          .catch(() => undefined);
+      }
+    },
+    [user, setUser],
+  );
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const qc = useQueryClient();
@@ -54,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     mutationFn: ({ path, body }: { path: string; body?: unknown }) =>
       api.post<{ user: User }>(path, body),
     onSuccess: ({ user }) => {
-      qc.clear();
+      resetUserData(qc);
       qc.setQueryData(ME_KEY, user);
     },
   });
@@ -88,7 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         (await session.mutateAsync({ path: "/api/auth/demo" })).user,
       logout: async () => {
         await api.post("/api/auth/logout").catch(() => undefined);
-        qc.clear();
+        resetUserData(qc);
         qc.setQueryData(ME_KEY, null);
       },
       setUser,

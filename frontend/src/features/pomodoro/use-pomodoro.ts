@@ -115,10 +115,7 @@ export function usePomodoro({ settings, onComplete }: Options) {
     const update = () => {
       // Ya terminó o se pausó: evita completar dos veces si llegan varios ticks seguidos.
       if (endAt.current === null) return;
-      const left = Math.max(
-        0,
-        Math.round((endAt.current - Date.now()) / 1000),
-      );
+      const left = Math.max(0, Math.round((endAt.current - Date.now()) / 1000));
       setTick(left);
       if (left <= 0) finish();
     };

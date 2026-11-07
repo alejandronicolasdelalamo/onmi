@@ -26,7 +26,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown";
 import { api } from "@/lib/api";
-import { useAuth } from "@/lib/auth";
+import { useAuth, useSetLanguage } from "@/lib/auth";
 import { errorMessage } from "@/lib/errors";
 import i18n, { LANGUAGES } from "@/lib/i18n";
 import { useTheme } from "@/lib/theme";
@@ -69,6 +69,7 @@ function SidebarLink({
 export function AppShell() {
   const { t } = useTranslation();
   const { user, logout } = useAuth();
+  const setLanguage = useSetLanguage();
   const { resolved, toggle } = useTheme();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -194,9 +195,7 @@ export function AppShell() {
               variant="ghost"
               size="sm"
               className="font-mono text-xs uppercase"
-              onClick={() =>
-                void i18n.changeLanguage(LANGUAGES.find((l) => l !== lang)!)
-              }
+              onClick={() => setLanguage(LANGUAGES.find((l) => l !== lang)!)}
               aria-label={t("palette.switchLanguage")}
             >
               {lang}

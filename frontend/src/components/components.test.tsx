@@ -19,7 +19,9 @@ describe("Heatmap", () => {
     // 2025-03-01 fue sábado: debe haber 5 huecos vacíos antes (lun-vie)
     const { container } = render(<Heatmap series={series} />);
     const firstColumn = container.querySelector("[role=img] > div")!;
-    const blanks = [...firstColumn.children].filter((c) => !c.getAttribute("title"));
+    const blanks = [...firstColumn.children].filter(
+      (c) => !c.getAttribute("title"),
+    );
     expect(blanks).toHaveLength(5);
   });
 
@@ -32,14 +34,22 @@ describe("Heatmap", () => {
 describe("MoodFace", () => {
   it("renderiza las cinco caritas", () => {
     for (const mood of MOODS) {
-      const { container, unmount } = render(<MoodFace mood={mood} title={mood} />);
-      expect(container.querySelector("svg")).toHaveAttribute("aria-label", mood);
+      const { container, unmount } = render(
+        <MoodFace mood={mood} title={mood} />,
+      );
+      expect(container.querySelector("svg")).toHaveAttribute(
+        "aria-label",
+        mood,
+      );
       unmount();
     }
   });
 
   it("es decorativa (aria-hidden) si no tiene título", () => {
     const { container } = render(<MoodFace mood="happy" />);
-    expect(container.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+    expect(container.querySelector("svg")).toHaveAttribute(
+      "aria-hidden",
+      "true",
+    );
   });
 });

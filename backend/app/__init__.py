@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import logging
 import os
+from pathlib import Path
 
-from flask import Flask, jsonify
+from flask import Flask, abort, jsonify, send_from_directory
 from werkzeug.exceptions import HTTPException
 
 from .config import get_config
@@ -53,7 +54,35 @@ def create_app(config_name: str | None = None) -> Flask:
     def health():
         return jsonify({"status": "ok"})
 
+    _register_spa(app)
+
     return app
+
+
+def _register_spa(app: Flask) -> None:
+    """Sirve el frontend compilado (mismo origen que la API: las cookies no necesitan CORS)."""
+    dist = os.getenv("FRONTEND_DIST")
+    if not dist and app.config["ENV_NAME"] == "production":
+        dist = str(Path(app.root_path).parent.parent / "frontend" / "dist")
+    if not dist or not os.path.isfile(os.path.join(dist, "index.html")):
+        return
+
+    reserved = ("api/", "docs", "db-admin")
+
+    @app.get("/", defaults={"path": ""})
+    @app.get("/<path:path>")
+    def spa(path: str):
+        if path.startswith(reserved):
+            abort(404)
+        if path and os.path.isfile(os.path.join(dist, path)):
+            resp = send_from_directory(dist, path)
+            # Los assets llevan hash en el nombre: caché larga. El service worker nunca.
+            immutable = path.startswith("assets/")
+            resp.headers["Cache-Control"] = "public, max-age=31536000, immutable" if immutable else "no-cache"
+            return resp
+        resp = send_from_directory(dist, "index.html")
+        resp.headers["Cache-Control"] = "no-cache"
+        return resp
 
 
 def _register_handlers(app: Flask) -> None:

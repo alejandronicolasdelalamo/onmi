@@ -1,0 +1,40 @@
+# Arranque completo en local:  cp .env.example .env  &&  docker compose up --build
+# La app queda en http://localhost:8000  (API en /api, documentación en /docs).
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: onmi
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-onmi}
+      POSTGRES_DB: onmi
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U onmi -d onmi"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://onmi:${POSTGRES_PASSWORD:-onmi}@db:5432/onmi
+      SECRET_KEY: ${SECRET_KEY:?Define SECRET_KEY en .env}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:?Define JWT_SECRET_KEY en .env}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:8000}
+      # En HTTP plano (sin proxy TLS) las cookies Secure solo funcionan en localhost.
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY:-}
+      MAIL_FROM: ${MAIL_FROM:-no-reply@onmi.app}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      DEMO_ENABLED: ${DEMO_ENABLED:-true}
+
+volumes:
+  db-data:

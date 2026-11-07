@@ -19,7 +19,7 @@ import {
 import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
 import { Field, Input } from "@/components/ui/form";
 import { api } from "@/lib/api";
-import { useAuth } from "@/lib/auth";
+import { useAuth, useSetLanguage } from "@/lib/auth";
 import { errorMessage } from "@/lib/errors";
 import i18n, { LANGUAGES } from "@/lib/i18n";
 import { useTheme, type Theme } from "@/lib/theme";
@@ -189,6 +189,7 @@ function DeleteAccount() {
 export function ProfilePage() {
   const { t } = useTranslation();
   const { user, setUser } = useAuth();
+  const setLanguage = useSetLanguage();
   const { theme, setTheme } = useTheme();
   const [name, setName] = useState(user?.name ?? "");
 
@@ -304,8 +305,7 @@ export function ProfilePage() {
                     label: l === "en" ? "English" : "Español",
                   }))}
                   onChange={(l) => {
-                    void i18n.changeLanguage(l);
-                    patch.mutate({ locale: l });
+                    setLanguage(l);
                   }}
                 />
               </div>
