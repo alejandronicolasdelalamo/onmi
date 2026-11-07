@@ -4,7 +4,7 @@ import { forwardRef, type ButtonHTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
 export const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all cursor-pointer " +
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-[color,background-color,border-color,box-shadow,transform,opacity] cursor-pointer " +
     "disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98] [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
@@ -18,10 +18,10 @@ export const buttonVariants = cva(
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {
-        default: "h-9 px-4 py-2",
-        sm: "h-8 rounded-md px-3 text-xs",
-        lg: "h-11 px-6 text-base",
-        icon: "size-9",
+        default: "h-9 px-4 py-2 pointer-coarse:h-11",
+        sm: "h-8 rounded-md px-3 text-xs pointer-coarse:h-10",
+        lg: "h-11 px-6 text-base pointer-coarse:h-12",
+        icon: "size-9 pointer-coarse:size-11",
       },
     },
     defaultVariants: { variant: "default", size: "default" },

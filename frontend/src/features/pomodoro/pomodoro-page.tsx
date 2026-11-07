@@ -244,9 +244,14 @@ export function PomodoroPage() {
               <CardTitle>{t("pomodoro.last14")}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-32">
+              <div
+                className="h-32"
+                role="img"
+                aria-label={`${t("pomodoro.last14")}: ${t("pomodoro.minutesShort", { count: stats?.series.reduce((n, d) => n + d.minutes, 0) ?? 0 })}`}
+              >
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
+                    accessibilityLayer={false}
                     data={stats?.series ?? []}
                     margin={{ top: 4, right: 0, bottom: 0, left: 0 }}
                   >

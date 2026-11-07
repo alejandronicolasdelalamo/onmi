@@ -54,6 +54,7 @@ import {
 import type { Habit } from "@/lib/types";
 import { addDays, cn, localISODate } from "@/lib/utils";
 
+import { QueryError } from "@/components/query-error";
 const COLORS = [
   "#6366f1",
   "#8b5cf6",
@@ -239,7 +240,7 @@ function LastDays({
             aria-label={t("habits.toggleDay", { date: d })}
             title={d}
             className={cn(
-              "h-7 flex-1 cursor-pointer rounded-[5px] border border-transparent transition-all hover:scale-105",
+              "h-7 pointer-coarse:h-10 flex-1 cursor-pointer rounded-[5px] border border-transparent transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:scale-105",
               !on && "bg-muted hover:border-border",
               d === today && !on && "border-border",
             )}
@@ -342,7 +343,8 @@ function HabitCard({ habit, onEdit }: { habit: Habit; onEdit: () => void }) {
       <ConfirmDialog
         open={confirm}
         onOpenChange={setConfirm}
-        title={t("habits.deleteTitle")}
+        title={t("habits.deleteTitle", { name: habit.name })}
+        description={t("habits.deleteDesc")}
         confirmLabel={t("common.delete")}
         pending={del.isPending}
         onConfirm={() =>
@@ -356,7 +358,13 @@ function HabitCard({ habit, onEdit }: { habit: Habit; onEdit: () => void }) {
 export function HabitsPage() {
   const { t } = useTranslation();
   const [showArchived, setShowArchived] = useState(false);
-  const { data: habits, isPending } = useHabits(showArchived);
+  const {
+    data: habits,
+    isPending,
+    isError,
+    error,
+    refetch,
+  } = useHabits(showArchived);
   const { data: heatmap } = useHeatmap(120);
   const [editing, setEditing] = useState<Habit | undefined>();
   const [dialog, setDialog] = useNewDialog();
@@ -427,7 +435,9 @@ export function HabitsPage() {
         </Card>
       )}
 
-      {isPending ? (
+      {isError ? (
+        <QueryError error={error} onRetry={() => void refetch()} />
+      ) : isPending ? (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {Array.from({ length: 3 }, (_, i) => (
             <Skeleton key={i} className="h-72" />

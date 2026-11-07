@@ -64,7 +64,7 @@ export function AuthLayout({
             onClick={() =>
               void i18n.changeLanguage(LANGUAGES.find((l) => l !== lang)!)
             }
-            aria-label={t("common.language")}
+            aria-label={`${lang}, ${t("common.language")}`}
           >
             {lang}
           </Button>

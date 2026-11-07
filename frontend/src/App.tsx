@@ -14,6 +14,7 @@ import {
   VerifyEmailPage,
 } from "@/features/auth/pages";
 
+import { RouteEffects } from "@/components/route-effects";
 // Las vistas pesadas (gráficas, drag & drop, markdown) se cargan bajo demanda.
 const HabitsPage = lazy(() =>
   import("@/features/habits/habits-page").then((m) => ({
@@ -157,6 +158,7 @@ export function AppRoutes() {
 export default function App() {
   return (
     <BrowserRouter>
+      <RouteEffects />
       <AppRoutes />
     </BrowserRouter>
   );

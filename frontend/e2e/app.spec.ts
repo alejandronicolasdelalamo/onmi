@@ -9,7 +9,7 @@ async function register(page: Page, name = "Ana Test") {
   await page.goto("/register");
   await page.getByLabel("Name").fill(name);
   await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(PASSWORD);
+  await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
   await page.getByRole("button", { name: "Create account" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toContainText(
     name.split(" ")[0]!,
@@ -25,7 +25,7 @@ test.describe("autenticación", () => {
     await expect(page).toHaveURL(/\/login$/);
 
     await page.getByLabel("Email").fill(email);
-    await page.getByLabel("Password").fill(PASSWORD);
+    await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
     await page.getByRole("button", { name: "Sign in" }).click();
     await expect(page.getByRole("heading", { level: 1 })).toContainText("Ana");
   });
@@ -36,7 +36,7 @@ test.describe("autenticación", () => {
     await page.goto("/habits");
     await expect(page).toHaveURL(/\/login$/);
     await page.getByLabel("Email").fill("nadie@example.com");
-    await page.getByLabel("Password").fill("whatever123");
+    await page.getByLabel("Password", { exact: true }).fill("whatever123");
     await page.getByRole("button", { name: "Sign in" }).click();
     await expect(page.getByText("Incorrect email or password.")).toBeVisible();
   });

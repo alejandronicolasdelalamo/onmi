@@ -256,14 +256,57 @@ export const useDeleteHabit = () =>
     (id: number) => api.delete(`/api/habits/${id}`),
     habitKeys,
   );
-export const useToggleHabit = () =>
-  useInvalidatingMutation(
-    ({ id, date }: { id: number; date?: string }) =>
+export function useToggleHabit() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, date }: { id: number; date?: string }) =>
       api.post<Habit>(`/api/habits/${id}/toggle`, {
         date: date ?? localISODate(),
       }),
-    habitKeys,
-  );
+    // Actualización optimista: el check cambia al instante; el servidor confirma y recalcula las rachas.
+    onMutate: async ({ id, date }) => {
+      const day = date ?? localISODate();
+      await Promise.all([
+        qc.cancelQueries({ queryKey: keys.habits }),
+        qc.cancelQueries({ queryKey: keys.dashboard }),
+      ]);
+      const prevHabits = qc.getQueriesData<Habit[]>({ queryKey: keys.habits });
+      const prevDash = qc.getQueryData<Dashboard>(keys.dashboard);
+      const flip = (h: Habit): Habit => {
+        if (h.id !== id) return h;
+        const dates = h.dates.includes(day)
+          ? h.dates.filter((d) => d !== day)
+          : [...h.dates, day].sort();
+        return {
+          ...h,
+          dates,
+          count: dates.length,
+          done_today: dates.includes(localISODate()),
+        };
+      };
+      qc.setQueriesData<Habit[]>({ queryKey: keys.habits }, (old) =>
+        Array.isArray(old) ? old.map(flip) : old,
+      );
+      qc.setQueryData<Dashboard>(keys.dashboard, (old) =>
+        old
+          ? {
+              ...old,
+              habits: { ...old.habits, today: old.habits.today.map(flip) },
+            }
+          : old,
+      );
+      return { prevHabits, prevDash };
+    },
+    onError: (_e, _v, ctx) => {
+      ctx?.prevHabits.forEach(([key, data]) => qc.setQueryData(key, data));
+      if (ctx?.prevDash) qc.setQueryData(keys.dashboard, ctx.prevDash);
+    },
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: keys.habits });
+      void qc.invalidateQueries({ queryKey: keys.dashboard });
+    },
+  });
+}
 
 // ---- mood ----------------------------------------------------------------------
 export const useMoods = (days = 30) =>

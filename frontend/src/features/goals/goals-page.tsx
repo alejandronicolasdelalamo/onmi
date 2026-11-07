@@ -35,6 +35,8 @@ import {
 import type { Goal } from "@/lib/types";
 import { cn, localISODate } from "@/lib/utils";
 
+import { QueryError } from "@/components/query-error";
+import { formatDate } from "@/lib/format";
 function GoalDialog({
   goal,
   open,
@@ -200,7 +202,7 @@ function GoalRow({
                   : "text-muted-foreground",
               )}
             >
-              <CalendarDays className="size-3.5" /> {goal.due_date}
+              <CalendarDays className="size-3.5" /> {formatDate(goal.due_date)}
             </span>
           )}
         </div>
@@ -228,7 +230,8 @@ function GoalRow({
       <ConfirmDialog
         open={confirm}
         onOpenChange={setConfirm}
-        title={t("goals.deleteTitle")}
+        title={t("goals.deleteTitle", { name: goal.title })}
+        description={t("goals.deleteDesc")}
         confirmLabel={t("common.delete")}
         pending={del.isPending}
         onConfirm={() =>
@@ -241,7 +244,7 @@ function GoalRow({
 
 export function GoalsPage() {
   const { t } = useTranslation();
-  const { data: goals, isPending } = useGoals();
+  const { data: goals, isPending, isError, error, refetch } = useGoals();
   const { data: projects = [] } = useProjects();
   const [editing, setEditing] = useState<Goal | undefined>();
   const [dialog, setDialog] = useNewDialog();
@@ -266,7 +269,9 @@ export function GoalsPage() {
           </Button>
         }
       />
-      {isPending ? (
+      {isError ? (
+        <QueryError error={error} onRetry={() => void refetch()} />
+      ) : isPending ? (
         <Skeleton className="h-64" />
       ) : goals && goals.length > 0 ? (
         <div className="grid gap-6 lg:grid-cols-2">

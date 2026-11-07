@@ -33,7 +33,7 @@ export function CardTitle({
   ...props
 }: HTMLAttributes<HTMLHeadingElement>) {
   return (
-    <h3
+    <h2
       className={cn("text-sm font-semibold tracking-tight", className)}
       {...props}
     />
@@ -70,9 +70,9 @@ export function Badge({
   const tones = {
     neutral: "bg-muted text-muted-foreground",
     primary: "bg-accent text-accent-foreground",
-    success: "bg-success/15 text-success",
-    warning: "bg-warning/20 text-foreground",
-    danger: "bg-destructive/15 text-destructive",
+    success: "bg-success/15 text-success-text",
+    warning: "bg-warning/20 text-warning-text",
+    danger: "bg-destructive/15 text-danger-text",
   };
   return (
     <span

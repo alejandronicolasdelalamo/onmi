@@ -75,7 +75,9 @@
     "demoHint": "Explora con datos de ejemplo, sin registrarte.",
     "noAccount": "¿No tienes cuenta?",
     "haveAccount": "¿Ya tienes cuenta?",
-    "backToSignIn": "Volver a iniciar sesión"
+    "backToSignIn": "Volver a iniciar sesión",
+    "showPassword": "Mostrar contraseña",
+    "hidePassword": "Ocultar contraseña"
   },
   "dashboard": {
     "morning": "Buenos días",
@@ -124,11 +126,12 @@
     "showArchived": "Mostrar archivados",
     "empty": "Aún no tienes hábitos.",
     "emptyDesc": "Crea uno y empieza a construir una racha.",
-    "deleteTitle": "¿Eliminar este hábito?",
+    "deleteTitle": "¿Eliminar «{{name}}»?",
     "less": "Menos",
     "more": "Más",
     "toggleDay": "Alternar {{date}}",
-    "last14": "Últimos 14 días"
+    "last14": "Últimos 14 días",
+    "deleteDesc": "Se borrará todo su historial y sus rachas. No se puede deshacer."
   },
   "notes": {
     "title": "Notas",
@@ -151,9 +154,10 @@
     "preview": "Vista previa",
     "project": "Proyecto",
     "goal": "Meta",
-    "deleteTitle": "¿Eliminar esta nota?",
+    "deleteTitle": "¿Eliminar «{{name}}»?",
     "updated": "Actualizada {{date}}",
-    "nothingToPreview": "Aún no hay nada que previsualizar."
+    "nothingToPreview": "Aún no hay nada que previsualizar.",
+    "deleteDesc": "La nota se eliminará de forma permanente."
   },
   "projects": {
     "title": "Proyectos",
@@ -179,7 +183,7 @@
     "goalsCount": "{{done}}/{{total}} metas",
     "progress": "{{value}}%",
     "overdue": "Vencido",
-    "deleteTitle": "¿Eliminar este proyecto?",
+    "deleteTitle": "¿Eliminar «{{name}}»?",
     "deleteDesc": "Sus metas también se eliminarán. Las notas se conservan, sin vincular.",
     "emptyColumn": "Suelta tarjetas aquí",
     "goals": "Metas",
@@ -202,8 +206,9 @@
     "completed": "Completadas",
     "empty": "Aún no hay metas.",
     "emptyDesc": "Añade una meta y vincúlala a un proyecto o hábito.",
-    "deleteTitle": "¿Eliminar esta meta?",
-    "markDone": "Marcar meta como hecha"
+    "deleteTitle": "¿Eliminar «{{name}}»?",
+    "markDone": "Marcar meta como hecha",
+    "deleteDesc": "Los hábitos y notas vinculados se conservan, sin vincular a esta meta."
   },
   "mood": {
     "title": "Ánimo",
@@ -298,7 +303,7 @@
     "makeUser": "Hacer usuario",
     "deactivate": "Desactivar",
     "activate": "Activar",
-    "deleteTitle": "¿Eliminar este usuario?",
+    "deleteTitle": "¿Eliminar a {{name}}?",
     "deleteDesc": "Todos sus datos se eliminarán de forma permanente.",
     "never": "Nunca",
     "notes": "Notas",

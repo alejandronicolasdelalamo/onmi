@@ -17,18 +17,21 @@ import { useAuth } from "@/lib/auth";
 import { useDashboard, useSetMood, useToggleHabit } from "@/lib/queries";
 import { cn, localISODate } from "@/lib/utils";
 
+import { QueryError } from "@/components/query-error";
+import { formatDate } from "@/lib/format";
 function greetingKey() {
   const h = new Date().getHours();
   return h < 12 ? "morning" : h < 19 ? "afternoon" : "evening";
 }
 
 function WeekBars({ data }: { data: { date: string; count: number }[] }) {
+  const { t } = useTranslation();
   const max = Math.max(1, ...data.map((d) => d.count));
   return (
     <div
       className="flex h-24 items-end gap-2"
       role="img"
-      aria-label="Weekly activity"
+      aria-label={t("dashboard.weekActivity")}
     >
       {data.map((d) => (
         <div
@@ -37,7 +40,7 @@ function WeekBars({ data }: { data: { date: string; count: number }[] }) {
         >
           <div
             className={cn(
-              "w-full rounded-t-md transition-all",
+              "w-full rounded-t-md transition-[color,background-color,border-color,box-shadow,transform,opacity]",
               d.count ? "bg-primary" : "bg-muted",
             )}
             style={{ height: `${Math.max(8, (d.count / max) * 100)}%` }}
@@ -57,7 +60,7 @@ function WeekBars({ data }: { data: { date: string; count: number }[] }) {
 export function DashboardPage() {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const { data, isPending } = useDashboard();
+  const { data, isPending, isError, error, refetch } = useDashboard();
   const toggle = useToggleHabit();
   const setMood = useSetMood();
   const today = localISODate();
@@ -69,7 +72,9 @@ export function DashboardPage() {
         subtitle={t("dashboard.subtitle")}
       />
 
-      {isPending || !data ? (
+      {isError ? (
+        <QueryError error={error} onRetry={() => void refetch()} />
+      ) : isPending || !data ? (
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {Array.from({ length: 4 }, (_, i) => (
             <Skeleton key={i} className="h-24" />
@@ -113,7 +118,7 @@ export function DashboardPage() {
                     aria-pressed={data.mood_today?.mood === m}
                     aria-label={t(`mood.kinds.${m}`)}
                     className={cn(
-                      "cursor-pointer rounded-full p-0.5 transition-all hover:scale-110",
+                      "cursor-pointer rounded-full p-0.5 transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:scale-110",
                       data.mood_today?.mood === m
                         ? "ring-2 ring-primary ring-offset-2 ring-offset-card"
                         : data.mood_today && "opacity-40 hover:opacity-100",
@@ -158,7 +163,7 @@ export function DashboardPage() {
                       >
                         <span
                           className={cn(
-                            "grid size-5 place-items-center rounded-full border-2 transition-all",
+                            "grid size-5 place-items-center rounded-full border-2 transition-[color,background-color,border-color,box-shadow,transform,opacity]",
                             done && "animate-pop",
                           )}
                           style={{
@@ -234,7 +239,7 @@ export function DashboardPage() {
                       </div>
                       <div className="h-1.5 overflow-hidden rounded-full bg-muted">
                         <div
-                          className="h-full rounded-full bg-primary transition-all"
+                          className="h-full rounded-full bg-primary transition-[color,background-color,border-color,box-shadow,transform,opacity]"
                           style={{ width: `${p.progress}%` }}
                         />
                       </div>
@@ -265,7 +270,7 @@ export function DashboardPage() {
                       <span className="truncate">{g.title}</span>
                       {g.due_date && (
                         <span className="shrink-0 text-xs text-muted-foreground">
-                          {g.due_date}
+                          {formatDate(g.due_date)}
                         </span>
                       )}
                     </div>

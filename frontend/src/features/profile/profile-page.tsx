@@ -27,6 +27,7 @@ import type { User } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { AvatarGif } from "@/features/mood/mood-page";
 
+import { PasswordInput } from "@/components/ui/password-input";
 const AVATARS = ["male", "female", "prefer_not_to_say"] as const;
 
 function Segmented<T extends string>({
@@ -105,8 +106,7 @@ function PasswordForm() {
         error={errors.current_password?.message}
       >
         {(p) => (
-          <Input
-            type="password"
+          <PasswordInput
             autoComplete="current-password"
             {...p}
             {...form.register("current_password")}
@@ -119,8 +119,7 @@ function PasswordForm() {
         error={errors.new_password?.message}
       >
         {(p) => (
-          <Input
-            type="password"
+          <PasswordInput
             autoComplete="new-password"
             {...p}
             {...form.register("new_password")}
@@ -282,7 +281,7 @@ export function ProfilePage() {
                     aria-checked={(user.avatar ?? "prefer_not_to_say") === a}
                     onClick={() => patch.mutate({ avatar: a })}
                     className={cn(
-                      "cursor-pointer space-y-1.5 rounded-xl border-2 p-2 text-xs font-medium transition-all hover:-translate-y-0.5",
+                      "cursor-pointer space-y-1.5 rounded-xl border-2 p-2 text-xs font-medium transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:-translate-y-0.5",
                       (user.avatar ?? "prefer_not_to_say") === a
                         ? "border-primary bg-accent"
                         : "border-transparent bg-muted/60",

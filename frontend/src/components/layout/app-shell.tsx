@@ -34,6 +34,7 @@ import { cn, initials } from "@/lib/utils";
 import { CommandPalette } from "./command-palette";
 import { NAV } from "./nav";
 
+import { isMac } from "@/lib/format";
 function SidebarLink({
   to,
   label,
@@ -180,14 +181,13 @@ export function AppShell() {
           <button
             onClick={() => setPaletteOpen(true)}
             className="flex h-9 w-full max-w-sm cursor-pointer items-center gap-2 rounded-md border border-input bg-card px-3 text-sm text-muted-foreground transition-colors hover:bg-muted"
-            aria-label={t("palette.open")}
           >
             <Search className="size-4" />
             <span className="flex-1 truncate text-left">
               {t("palette.placeholder")}
             </span>
             <kbd className="hidden rounded border border-border bg-muted px-1.5 font-mono text-[10px] sm:inline">
-              Ctrl K
+              {isMac() ? "⌘ K" : "Ctrl K"}
             </kbd>
           </button>
           <div className="ml-auto flex items-center gap-1">
@@ -196,7 +196,7 @@ export function AppShell() {
               size="sm"
               className="font-mono text-xs uppercase"
               onClick={() => setLanguage(LANGUAGES.find((l) => l !== lang)!)}
-              aria-label={t("palette.switchLanguage")}
+              aria-label={`${lang}, ${t("palette.switchLanguage")}`}
             >
               {lang}
             </Button>
@@ -210,15 +210,14 @@ export function AppShell() {
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full"
-                  aria-label={user.name}
-                >
-                  <span className="grid size-8 place-items-center rounded-full bg-accent text-xs font-semibold text-accent-foreground">
+                <Button variant="ghost" size="icon" className="rounded-full">
+                  <span
+                    className="grid size-8 place-items-center rounded-full bg-accent text-xs font-semibold text-accent-foreground"
+                    aria-hidden
+                  >
                     {initials(user.name)}
                   </span>
+                  <span className="sr-only">{user.name}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>

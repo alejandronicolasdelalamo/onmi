@@ -12,22 +12,21 @@ describe("Heatmap", () => {
   it("pinta una celda por día con su descripción accesible", () => {
     const { container } = render(<Heatmap series={series} />);
     expect(screen.getByRole("img", { name: /activity/i })).toBeInTheDocument();
-    expect(container.querySelectorAll("[title^='2025-03-']")).toHaveLength(21);
+    expect(container.querySelectorAll("[data-date^='2025-03-']")).toHaveLength(
+      21,
+    );
   });
 
   it("alinea el primer día con su día de la semana (lunes primero)", () => {
     // 2025-03-01 fue sábado: debe haber 5 huecos vacíos antes (lun-vie)
     const { container } = render(<Heatmap series={series} />);
     const firstColumn = container.querySelector("[role=img] > div")!;
-    const blanks = [...firstColumn.children].filter(
-      (c) => !c.getAttribute("title"),
-    );
-    expect(blanks).toHaveLength(5);
+    expect(firstColumn.querySelectorAll("[data-empty]")).toHaveLength(5);
   });
 
   it("funciona sin datos", () => {
     const { container } = render(<Heatmap series={[]} />);
-    expect(container.querySelectorAll("[title^='20']")).toHaveLength(0);
+    expect(container.querySelectorAll("[data-date]")).toHaveLength(0);
   });
 });
 

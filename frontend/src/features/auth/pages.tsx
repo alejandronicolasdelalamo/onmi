@@ -15,6 +15,7 @@ import { errorMessage, fieldErrors } from "@/lib/errors";
 import { AuthLayout } from "./auth-layout";
 import { SocialSection } from "./social-section";
 
+import { PasswordInput } from "@/components/ui/password-input";
 function useSchemas() {
   const { t } = useTranslation();
   return useMemo(() => {
@@ -112,8 +113,7 @@ export function LoginPage() {
         </Field>
         <Field label={t("auth.password")} error={errors.password?.message}>
           {(p) => (
-            <Input
-              type="password"
+            <PasswordInput
               autoComplete="current-password"
               {...p}
               {...form.register("password")}
@@ -210,8 +210,7 @@ export function RegisterPage() {
           error={errors.password?.message ?? server.password}
         >
           {(p) => (
-            <Input
-              type="password"
+            <PasswordInput
               autoComplete="new-password"
               {...p}
               {...form.register("password")}
@@ -333,8 +332,7 @@ export function ResetPasswordPage() {
             error={errors.password?.message}
           >
             {(p) => (
-              <Input
-                type="password"
+              <PasswordInput
                 autoComplete="new-password"
                 autoFocus
                 {...p}

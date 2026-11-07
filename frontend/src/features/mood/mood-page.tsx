@@ -26,6 +26,7 @@ import { useMoods, useSetMood } from "@/lib/queries";
 import type { MoodKind } from "@/lib/types";
 import { addDays, cn, localISODate } from "@/lib/utils";
 
+import { QueryError } from "@/components/query-error";
 /** GIF del avatar elegido en Ajustes reaccionando al ánimo seleccionado. */
 export function AvatarGif({
   avatar,
@@ -55,7 +56,7 @@ export function AvatarGif({
 export function MoodPage() {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const { data, isPending } = useMoods(30);
+  const { data, isPending, isError, error, refetch } = useMoods(30);
   const setMood = useSetMood();
   // Lo que el usuario ha tocado manda; si no, se muestra lo ya guardado hoy.
   const [pickedMood, setPickedMood] = useState<MoodKind | null>(null);
@@ -88,6 +89,11 @@ export function MoodPage() {
   return (
     <Page>
       <PageHeader title={t("mood.title")} subtitle={t("mood.subtitle")} />
+      {isError && (
+        <div className="mb-4">
+          <QueryError error={error} onRetry={() => void refetch()} />
+        </div>
+      )}
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
@@ -112,7 +118,7 @@ export function MoodPage() {
                     aria-checked={selected === m}
                     onClick={() => setSelected(m)}
                     className={cn(
-                      "flex cursor-pointer flex-col items-center gap-1.5 rounded-xl border-2 px-3 py-2.5 text-xs font-medium transition-all hover:-translate-y-0.5",
+                      "flex cursor-pointer flex-col items-center gap-1.5 rounded-xl border-2 px-3 py-2.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:-translate-y-0.5",
                       selected === m
                         ? "border-primary bg-accent"
                         : "border-transparent bg-muted/60 hover:bg-muted",
@@ -148,9 +154,13 @@ export function MoodPage() {
               <EmptyState title={t("mood.empty")} />
             ) : (
               <>
-                <div className="h-44">
+                <div
+                  className="h-44"
+                  role="img"
+                  aria-label={`${t("mood.distribution")}: ${pie.map((d) => `${d.name} ${d.value}`).join(", ")}`}
+                >
                   <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
+                    <PieChart accessibilityLayer={false}>
                       <Pie
                         data={pie}
                         dataKey="value"

@@ -31,6 +31,7 @@ import {
 } from "@/lib/queries";
 import type { AdminUser } from "@/lib/types";
 
+import { QueryError } from "@/components/query-error";
 export function AdminPage() {
   const { t, i18n } = useTranslation();
   const { user: me } = useAuth();
@@ -38,7 +39,13 @@ export function AdminPage() {
   const [q, setQ] = useState("");
   const [debounced, setDebounced] = useState("");
   const [page, setPage] = useState(1);
-  const { data: users, isPending } = useAdminUsers({ q: debounced, page });
+  const {
+    data: users,
+    isPending,
+    isError,
+    error,
+    refetch,
+  } = useAdminUsers({ q: debounced, page });
   const update = useUpdateAdminUser();
   const del = useDeleteAdminUser();
   const [toDelete, setToDelete] = useState<AdminUser | null>(null);
@@ -94,10 +101,15 @@ export function AdminPage() {
             <CardTitle>{t("admin.signups")}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-44">
+            <div
+              className="h-44"
+              role="img"
+              aria-label={`${t("admin.signups")}: ${metrics?.signups.reduce((n, d) => n + d.count, 0) ?? 0}`}
+            >
               {metrics ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart
+                    accessibilityLayer={false}
                     data={metrics.signups}
                     margin={{ top: 4, right: 4, bottom: 0, left: 4 }}
                   >
@@ -179,7 +191,9 @@ export function AdminPage() {
           />
         </CardHeader>
         <CardContent className="overflow-x-auto">
-          {isPending ? (
+          {isError ? (
+            <QueryError error={error} onRetry={() => void refetch()} />
+          ) : isPending ? (
             <Skeleton className="h-48" />
           ) : (
             <table className="w-full min-w-[40rem] text-sm">
@@ -315,7 +329,7 @@ export function AdminPage() {
       <ConfirmDialog
         open={!!toDelete}
         onOpenChange={(o) => !o && setToDelete(null)}
-        title={t("admin.deleteTitle")}
+        title={t("admin.deleteTitle", { name: toDelete?.name ?? "" })}
         description={t("admin.deleteDesc")}
         confirmLabel={t("common.delete")}
         pending={del.isPending}

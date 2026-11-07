@@ -75,7 +75,9 @@
     "demoHint": "Explore with sample data, no sign-up needed.",
     "noAccount": "Don't have an account?",
     "haveAccount": "Already have an account?",
-    "backToSignIn": "Back to sign in"
+    "backToSignIn": "Back to sign in",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password"
   },
   "dashboard": {
     "morning": "Good morning",
@@ -124,11 +126,12 @@
     "showArchived": "Show archived",
     "empty": "You have no habits yet.",
     "emptyDesc": "Create one and start building a streak.",
-    "deleteTitle": "Delete this habit?",
+    "deleteTitle": "Delete “{{name}}”?",
     "less": "Less",
     "more": "More",
     "toggleDay": "Toggle {{date}}",
-    "last14": "Last 14 days"
+    "last14": "Last 14 days",
+    "deleteDesc": "Its whole history and streaks will be deleted. This cannot be undone."
   },
   "notes": {
     "title": "Notes",
@@ -151,9 +154,10 @@
     "preview": "Preview",
     "project": "Project",
     "goal": "Goal",
-    "deleteTitle": "Delete this note?",
+    "deleteTitle": "Delete “{{name}}”?",
     "updated": "Updated {{date}}",
-    "nothingToPreview": "Nothing to preview yet."
+    "nothingToPreview": "Nothing to preview yet.",
+    "deleteDesc": "The note will be removed permanently."
   },
   "projects": {
     "title": "Projects",
@@ -179,7 +183,7 @@
     "goalsCount": "{{done}}/{{total}} goals",
     "progress": "{{value}}%",
     "overdue": "Overdue",
-    "deleteTitle": "Delete this project?",
+    "deleteTitle": "Delete “{{name}}”?",
     "deleteDesc": "Its goals will be deleted too. Notes stay, unlinked.",
     "emptyColumn": "Drop cards here",
     "goals": "Goals",
@@ -202,8 +206,9 @@
     "completed": "Completed",
     "empty": "No goals yet.",
     "emptyDesc": "Add a goal and link it to a project or habit.",
-    "deleteTitle": "Delete this goal?",
-    "markDone": "Mark goal as done"
+    "deleteTitle": "Delete “{{name}}”?",
+    "markDone": "Mark goal as done",
+    "deleteDesc": "Linked habits and notes stay, just unlinked from this goal."
   },
   "mood": {
     "title": "Mood",
@@ -298,7 +303,7 @@
     "makeUser": "Make user",
     "deactivate": "Deactivate",
     "activate": "Activate",
-    "deleteTitle": "Delete this user?",
+    "deleteTitle": "Delete {{name}}?",
     "deleteDesc": "All their data will be permanently removed.",
     "never": "Never",
     "notes": "Notes",

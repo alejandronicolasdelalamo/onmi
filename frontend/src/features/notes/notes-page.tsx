@@ -45,6 +45,7 @@ import {
 import type { Note } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
+import { QueryError } from "@/components/query-error";
 const Markdown = lazy(() => import("./markdown"));
 
 function useDebounced<T>(value: T, ms = 250) {
@@ -301,7 +302,8 @@ function NoteForm({
         <ConfirmDialog
           open={confirm}
           onOpenChange={setConfirm}
-          title={t("notes.deleteTitle")}
+          title={t("notes.deleteTitle", { name: note.title })}
+          description={t("notes.deleteDesc")}
           confirmLabel={t("common.delete")}
           pending={del.isPending}
           onConfirm={() =>
@@ -355,7 +357,13 @@ export function NotesPage() {
   const [search, setSearch] = useState("");
   const [tag, setTag] = useState("");
   const q = useDebounced(search);
-  const { data: notes, isPending } = useNotes({ q, tag });
+  const {
+    data: notes,
+    isPending,
+    isError,
+    error,
+    refetch,
+  } = useNotes({ q, tag });
   const { data: tags = [] } = useTags();
   const update = useUpdateNote();
   const [editing, setEditing] = useState<Note | undefined>();
@@ -433,7 +441,9 @@ export function NotesPage() {
         )}
       </div>
 
-      {isPending ? (
+      {isError ? (
+        <QueryError error={error} onRetry={() => void refetch()} />
+      ) : isPending ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }, (_, i) => (
             <Skeleton key={i} className="h-36" />
@@ -444,7 +454,7 @@ export function NotesPage() {
           {notes.map((n) => (
             <Card
               key={n.id}
-              className="group relative flex cursor-pointer flex-col gap-2 p-4 transition-all hover:-translate-y-0.5 hover:shadow-md"
+              className="group relative flex cursor-pointer flex-col gap-2 p-4 transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:-translate-y-0.5 hover:shadow-md"
               onClick={() => {
                 setEditing(n);
                 setDialog(true);

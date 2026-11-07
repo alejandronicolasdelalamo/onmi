@@ -8,8 +8,10 @@ import { ApiError } from "./lib/api";
 import { AuthProvider } from "./lib/auth";
 import "./lib/i18n";
 import { ThemeProvider, useTheme } from "./lib/theme";
+import "@fontsource-variable/inter";
 import "./index.css";
 
+import { ErrorBoundary } from "./components/query-error";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -35,7 +37,9 @@ createRoot(document.getElementById("root")!).render(
       <ThemeProvider>
         <TooltipProvider>
           <AuthProvider>
-            <App />
+            <ErrorBoundary>
+              <App />
+            </ErrorBoundary>
             <ThemedToaster />
           </AuthProvider>
         </TooltipProvider>

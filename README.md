@@ -60,7 +60,7 @@ ONMi es una app de productividad personal. Reúne en una sola interfaz lo que no
 | Frontend | React 19, TypeScript, Vite, Tailwind CSS 4, componentes estilo shadcn/ui sobre Radix, TanStack Query, React Hook Form + Zod, dnd-kit, Recharts, cmdk, i18next |
 | Backend | Flask 3, SQLAlchemy 2, Flask-Migrate (Alembic), Flask-JWT-Extended, Flask-Limiter, Pydantic v2, Flask-Admin |
 | Datos | PostgreSQL en producción · SQLite en desarrollo y tests |
-| Calidad | pytest (36 tests, 93 % de cobertura), Vitest + Testing Library (32), Playwright E2E (14), Ruff, ESLint, TypeScript estricto |
+| Calidad | pytest (36 tests, 93 % de cobertura), Vitest + Testing Library (34), Playwright E2E (22, incluida una auditoría de accesibilidad con axe-core), Ruff, ESLint, TypeScript estricto |
 | DevOps | Docker multi-stage, Docker Compose, GitHub Actions, blueprint de Render |
 
 ## Arquitectura
@@ -87,6 +87,19 @@ La seguridad fue el eje principal de la reescritura:
 - El **rol se lee de la base de datos** en cada petición: desactivar a un usuario o quitarle el rol admin se aplica al instante.
 - Validación estricta con Pydantic (`extra="forbid"`: no se puede enviar `role` al registrarse), contraseñas con hash de Werkzeug, secretos obligatorios en producción y cabeceras de seguridad.
 - Login con Google verificando el `aud` del ID token contra tu `GOOGLE_CLIENT_ID`.
+
+## Accesibilidad y experiencia de uso
+
+Cumple WCAG 2.1 AA y se verifica en cada ejecución del CI: un test de Playwright con **axe-core** recorre todas las pantallas,
+en modo claro y oscuro, y falla ante cualquier infracción grave o crítica. Esa auditoría ya detectó y obligó a corregir problemas
+reales, como etiquetas accesibles que no incluían el texto visible o un contraste insuficiente en las etiquetas de prioridad.
+
+- **Teclado y lectores de pantalla**: enlace de salto al contenido, foco que pasa al contenido principal al navegar, título de pestaña por pantalla y `<html lang>` sincronizado con el idioma. El Kanban se puede mover con teclado.
+- **Móvil**: objetivos táctiles de al menos 44 px en pantallas táctiles, navegación en cajón y estadísticas en dos columnas.
+- **Estados completos**: esqueletos de carga, estados vacíos con una acción y errores de carga con botón de reintentar; un fallo de renderizado no deja la pantalla en blanco.
+- **Respuesta inmediata**: marcar un hábito se refleja al instante (actualización optimista con vuelta atrás si falla el servidor).
+- **Pequeños detalles**: fuente Inter autoalojada, fechas formateadas con `Intl` según el idioma, mostrar u ocultar contraseña, atajo `⌘K` o `Ctrl K` según el sistema, heatmap con etiquetas de día y mes, y confirmaciones que nombran lo que se va a borrar.
+- Respeta `prefers-reduced-motion` y `prefers-color-scheme`.
 
 ## Cómo ejecutarlo
 
@@ -144,8 +157,8 @@ Crear un administrador: `flask create-admin tu@email.com`.
 
 ```bash
 cd backend  && pytest --cov=app          # 36 tests
-cd frontend && npm test                  # 32 tests (Vitest)
-cd frontend && npx playwright install chromium && npm run e2e   # 14 flujos de extremo a extremo
+cd frontend && npm test                  # 34 tests (Vitest)
+cd frontend && npx playwright install chromium && npm run e2e   # 22 tests de extremo a extremo (14 flujos + 8 de accesibilidad)
 ```
 
 Los E2E arrancan solos una API con base de datos SQLite desechable y el servidor de Vite. Para regenerar las capturas de este

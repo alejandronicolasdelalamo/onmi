@@ -56,6 +56,8 @@ import {
 import type { Priority, Project, ProjectStatus } from "@/lib/types";
 import { cn, localISODate } from "@/lib/utils";
 
+import { QueryError } from "@/components/query-error";
+import { formatDate } from "@/lib/format";
 const COLUMNS: ProjectStatus[] = ["todo", "in_progress", "done"];
 const PRIORITY_TONE: Record<Priority, "neutral" | "warning" | "danger"> = {
   low: "neutral",
@@ -104,7 +106,7 @@ function ProjectCardBody({
           </div>
           <div className="h-1.5 overflow-hidden rounded-full bg-muted">
             <div
-              className="h-full rounded-full bg-primary transition-all"
+              className="h-full rounded-full bg-primary transition-[color,background-color,border-color,box-shadow,transform,opacity]"
               style={{ width: `${project.progress}%` }}
             />
           </div>
@@ -118,7 +120,7 @@ function ProjectCardBody({
           )}
         >
           <CalendarDays className="size-3.5" />
-          {project.due_date}
+          {formatDate(project.due_date)}
           {overdue && <span> · {t("projects.overdue")}</span>}
         </p>
       )}
@@ -485,7 +487,7 @@ function ProjectDialog({
           <ConfirmDialog
             open={confirm}
             onOpenChange={setConfirm}
-            title={t("projects.deleteTitle")}
+            title={t("projects.deleteTitle", { name: project.name })}
             description={t("projects.deleteDesc")}
             confirmLabel={t("common.delete")}
             pending={del.isPending}
@@ -507,7 +509,7 @@ function ProjectDialog({
 
 export function ProjectsPage() {
   const { t } = useTranslation();
-  const { data: projects, isPending } = useProjects();
+  const { data: projects, isPending, isError, error, refetch } = useProjects();
   const move = useMoveProject();
   const [active, setActive] = useState<Project | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -581,7 +583,9 @@ export function ProjectsPage() {
         }
       />
 
-      {isPending ? (
+      {isError ? (
+        <QueryError error={error} onRetry={() => void refetch()} />
+      ) : isPending ? (
         <div className="grid gap-4 md:grid-cols-3">
           {Array.from({ length: 3 }, (_, i) => (
             <Skeleton key={i} className="h-64" />
