@@ -197,9 +197,20 @@ export function DashboardPage() {
                         >
                           {h.name}
                         </span>
+                        {h.target_per_week < 7 && (
+                          <span className="text-xs tabular-nums text-muted-foreground">
+                            {t("habits.weeklyShort", {
+                              done: h.week_count,
+                              target: h.target_per_week,
+                            })}
+                          </span>
+                        )}
                         {h.current_streak > 0 && (
                           <Badge tone="warning">
                             <Flame className="size-3" /> {h.current_streak}
+                            {h.streak_unit === "week"
+                              ? t("habits.weekSuffix")
+                              : ""}
                           </Badge>
                         )}
                       </button>

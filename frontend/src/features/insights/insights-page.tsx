@@ -363,9 +363,14 @@ export function InsightsPage() {
                     <CardContent className="space-y-1">
                       <p className="flex items-center gap-1.5 font-medium">
                         <Flame className="size-4 text-warning" aria-hidden />
-                        {t("insights.topStreak", {
-                          count: data.top_streak.days,
-                        })}
+                        {t(
+                          data.top_streak.unit === "week"
+                            ? "insights.topStreakWeeks"
+                            : "insights.topStreak",
+                          {
+                            count: data.top_streak.count,
+                          },
+                        )}
                       </p>
                       <p className="text-sm text-muted-foreground">
                         {t("insights.topStreakDesc", {

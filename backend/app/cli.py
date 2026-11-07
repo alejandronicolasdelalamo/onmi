@@ -24,6 +24,25 @@ def register_cli(app: Flask) -> None:
         user = ensure_demo_user()
         click.echo(f"Usuario demo listo: {user.email}")
 
+    @app.cli.command("send-reminders")
+    def send_reminders():
+        """Envía los recordatorios de hábitos que toquen ahora. Programar cada 5 minutos (cron)."""
+        from .services.reminders import send_due_reminders
+
+        stats = send_due_reminders()
+        click.echo(
+            f"Revisados: {stats['checked']} · enviados: {stats['sent']} · "
+            f"suscripciones caducadas eliminadas: {stats['subscriptions_removed']}"
+        )
+
+    @app.cli.command("generate-vapid")
+    def generate_vapid():
+        """Genera un par de claves VAPID para las notificaciones push."""
+        from .services.push import generate_vapid_keys
+
+        public, private = generate_vapid_keys()
+        click.echo(f"VAPID_PUBLIC_KEY={public}\nVAPID_PRIVATE_KEY={private}")
+
     @app.cli.command("create-admin")
     @click.argument("email")
     @click.option("--name", default="Admin")

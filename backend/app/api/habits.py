@@ -37,6 +37,8 @@ def create_habit():
         description=data.description,
         category=data.category,
         color=data.color,
+        target_per_week=data.target_per_week,
+        reminder_time=data.reminder_time,
         goal_id=check_ref(Goal, data.goal_id, user),
     )
     db.session.add(habit)
@@ -85,12 +87,18 @@ def update_habit(habit_id):
     habit = get_owned(Habit, habit_id, user)
     data = parse_body(HabitUpdate)
     fields = data.model_fields_set
-    for required in ("name", "color", "archived"):
+    for required in ("name", "color", "archived", "target_per_week"):
         if required in fields and getattr(data, required) is None:
             raise ApiError(f"{required} cannot be null", 422, "validation_error")
     if "goal_id" in fields:
         check_ref(Goal, data.goal_id, user)
-    apply_updates(habit, data, ("name", "description", "category", "color", "goal_id", "archived"))
+    apply_updates(
+        habit,
+        data,
+        ("name", "description", "category", "color", "goal_id", "archived", "target_per_week", "reminder_time"),
+    )
+    if "reminder_time" in fields:
+        habit.last_reminded_on = None  # un horario nuevo vuelve a poder avisar hoy
     db.session.commit()
     return jsonify(habit.to_dict(today()))
 

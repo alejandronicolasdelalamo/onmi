@@ -35,6 +35,10 @@ class Config:
     MAIL_FROM = os.getenv("MAIL_FROM", "no-reply@onmi.app")
     GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
     DEMO_ENABLED = os.getenv("DEMO_ENABLED", "true").lower() == "true"
+    # Web Push (recordatorios). Genera las claves con `flask generate-vapid`. Sin ellas, la opción se oculta.
+    VAPID_PUBLIC_KEY = os.getenv("VAPID_PUBLIC_KEY", "")
+    VAPID_PRIVATE_KEY = os.getenv("VAPID_PRIVATE_KEY", "")
+    VAPID_SUBJECT = os.getenv("VAPID_SUBJECT", "mailto:no-reply@onmi.app")
 
     RATELIMIT_STORAGE_URI = os.getenv("RATELIMIT_STORAGE_URI", "memory://")
     RATELIMIT_ENABLED = os.getenv("RATELIMIT_ENABLED", "true").lower() == "true"
@@ -62,6 +66,8 @@ class TestConfig(Config):
     RATELIMIT_ENABLED = False
     SENDGRID_API_KEY = ""
     GOOGLE_CLIENT_ID = "test-client-id"
+    VAPID_PUBLIC_KEY = "test-public-key"
+    VAPID_PRIVATE_KEY = "test-private-key"
 
 
 def get_config(name: str | None = None):

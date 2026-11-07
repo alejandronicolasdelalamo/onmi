@@ -132,7 +132,19 @@
     "more": "More",
     "toggleDay": "Toggle {{date}}",
     "last14": "Last 14 days",
-    "deleteDesc": "Its whole history and streaks will be deleted. This cannot be undone."
+    "deleteDesc": "Its whole history and streaks will be deleted. This cannot be undone.",
+    "frequency": "How often",
+    "frequencyDaily": "Every day",
+    "frequencyWeekly": "{{count}} times a week",
+    "frequencyOnce": "Once a week",
+    "reminder": "Reminder",
+    "reminderHint": "We will nudge you if it is still pending. Turn on notifications in Settings.",
+    "reminderAt": "Reminder at {{time}}",
+    "weekProgress": "{{done}} of {{target}} this week",
+    "weeklyShort": "{{done}}/{{target}} this week",
+    "streakWeeks": "Streak (weeks)",
+    "bestWeeks": "Best (weeks)",
+    "weekSuffix": "w"
   },
   "notes": {
     "title": "Notes",
@@ -391,7 +403,8 @@
     "bestDayDesc": "{{share}}% of your habit check-ins happen on {{day}}.",
     "topStreak": "{{count}}-day streak",
     "topStreakDesc": "{{name}} is your longest active streak.",
-    "outOf": "out of 5"
+    "outOf": "out of 5",
+    "topStreakWeeks": "{{count}}-week streak"
   },
   "onboarding": {
     "title": "Get started with ONMi",
@@ -406,6 +419,22 @@
   },
   "celebrate": {
     "title": "{{count}}-day streak!",
-    "description": "Keep it going with {{name}}."
+    "description": "Keep it going with {{name}}.",
+    "titleWeeks": "{{count}}-week streak!"
+  },
+  "reminders": {
+    "title": "Reminders",
+    "desc": "Get a push notification when a habit with a reminder time is still pending. Set the time when you create or edit the habit.",
+    "enable": "Enable reminders",
+    "enabled": "Reminders are on for this device.",
+    "disable": "Turn off",
+    "test": "Send a test",
+    "testSent": "Test notification sent",
+    "testFailed": "The test could not be delivered",
+    "enabledToast": "Reminders enabled",
+    "disabledToast": "Reminders turned off",
+    "unsupported": "This browser does not support push notifications.",
+    "notConfigured": "Reminders are not set up on this server yet.",
+    "blocked": "Notifications are blocked. Allow them in your browser settings to enable reminders."
   }
 }

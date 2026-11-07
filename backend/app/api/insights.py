@@ -7,7 +7,7 @@ from ..extensions import db
 from ..models import Goal, Habit, MoodEntry, PomodoroSession
 from ..openapi import doc
 from ..services import insights as calc
-from ..services.stats import current_streak
+from ..services.stats import habit_streaks
 from ..utils import current_user, today
 
 bp = Blueprint("insights", __name__, url_prefix="/api/insights")
@@ -92,15 +92,19 @@ def get_insights():
             effects.append({"habit_id": h.id, "name": h.name, "color": h.color, **effect})
     effects.sort(key=lambda e: -abs(e["diff"]))
 
-    streaks = [(h.name, current_streak(habit_days[h.id], t)) for h in habits]
-    top = max(streaks, key=lambda s: s[1], default=None)
+    # Para comparar rachas en días con rachas en semanas se usa su equivalente en días.
+    streaks = []
+    for h in habits:
+        count, _, unit = habit_streaks(habit_days[h.id], h.target_per_week, t)
+        streaks.append((h.name, count, unit, count * (7 if unit == "week" else 1)))
+    top = max(streaks, key=lambda s: s[3], default=None)
 
     return jsonify(
         {
             "week": {"current": current, "previous": previous, "deltas": deltas},
             "habit_effects": effects[:3],
             "best_weekday": calc.best_weekday([d for days in habit_days.values() for d in days]),
-            "top_streak": {"name": top[0], "days": top[1]} if top and top[1] > 0 else None,
+            "top_streak": {"name": top[0], "count": top[1], "unit": top[2]} if top and top[1] > 0 else None,
             "unlock": {"mood_days": len(mood_by_day), "target": calc.UNLOCK_TARGET_DAYS},
         }
     )

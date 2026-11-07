@@ -2,15 +2,17 @@ import { toast } from "sonner";
 import i18n from "./i18n";
 
 export const MILESTONES = [7, 14, 30, 60, 100, 200, 365] as const;
+export const WEEK_MILESTONES = [4, 8, 12, 26, 52] as const;
 
 /** Devuelve el hito alcanzado, o null. Solo se celebra al completar el día, no al deshacer. */
 export function milestoneFor(
   streak: number,
   justCompleted: boolean,
+  unit: "day" | "week" = "day",
 ): number | null {
-  return justCompleted && (MILESTONES as readonly number[]).includes(streak)
-    ? streak
-    : null;
+  const list: readonly number[] =
+    unit === "week" ? WEEK_MILESTONES : MILESTONES;
+  return justCompleted && list.includes(streak) ? streak : null;
 }
 
 const COLORS = [
@@ -86,10 +88,19 @@ function confetti() {
   requestAnimationFrame(tick);
 }
 
-export function celebrate(streak: number, habitName: string) {
-  toast.success(i18n.t("celebrate.title", { count: streak }), {
-    description: i18n.t("celebrate.description", { name: habitName }),
-    duration: 5000,
-  });
+export function celebrate(
+  streak: number,
+  habitName: string,
+  unit: "day" | "week" = "day",
+) {
+  toast.success(
+    i18n.t(unit === "week" ? "celebrate.titleWeeks" : "celebrate.title", {
+      count: streak,
+    }),
+    {
+      description: i18n.t("celebrate.description", { name: habitName }),
+      duration: 5000,
+    },
+  );
   confetti();
 }

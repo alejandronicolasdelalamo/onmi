@@ -319,3 +319,87 @@ test.describe("novedades", () => {
     await expect(page.getByText("7-day streak!")).toBeVisible();
   });
 });
+
+test.describe("frecuencia semanal y recordatorios", () => {
+  test("un hábito de 3 veces por semana muestra su progreso semanal y racha en semanas", async ({
+    page,
+  }) => {
+    await register(page);
+    await page.goto("/habits");
+    await page.getByRole("button", { name: "New habit" }).first().click();
+    await page.getByLabel("Name").fill("Gym");
+    await page.getByLabel("How often").selectOption("3");
+    await page.getByLabel(/Reminder/).fill("07:30");
+    await page.getByRole("button", { name: "Save" }).click();
+
+    await expect(page.getByRole("heading", { name: "Gym" })).toBeVisible();
+    await expect(page.getByText("0 of 3 this week")).toBeVisible();
+    await expect(page.getByTitle("Reminder at 07:30")).toBeVisible();
+    await expect(page.getByText("Streak (weeks)")).toBeVisible();
+
+    await Promise.all([
+      page.waitForResponse((r) => r.url().includes("/toggle") && r.ok()),
+      page.getByRole("button", { name: "Mark as done" }).click(),
+    ]);
+    await expect(page.getByText("1 of 3 this week")).toBeVisible();
+    await expect(
+      page.getByRole("progressbar", { name: "1 of 3 this week" }),
+    ).toHaveAttribute("aria-valuenow", "1");
+  });
+
+  test("un hábito diario no muestra progreso semanal", async ({ page }) => {
+    await register(page);
+    await page.goto("/habits");
+    await page.getByRole("button", { name: "New habit" }).first().click();
+    await page.getByLabel("Name").fill("Water");
+    await page.getByRole("button", { name: "Save" }).click();
+    await expect(page.getByRole("heading", { name: "Water" })).toBeVisible();
+    await expect(page.getByText(/this week/)).toHaveCount(0);
+    await expect(page.getByText("Current streak")).toBeVisible();
+    await expect(page.getByText("Streak (weeks)")).toHaveCount(0);
+  });
+
+  const setNotificationPermission = (page: Page, state: "default" | "denied") =>
+    page.addInitScript(
+      (value) =>
+        Object.defineProperty(Notification, "permission", { get: () => value }),
+      state,
+    );
+
+  test("ajustes: con el servidor configurado se ofrece activar los recordatorios", async ({
+    page,
+  }) => {
+    await setNotificationPermission(page, "default");
+    await register(page);
+    await page.goto("/settings");
+    await expect(
+      page.getByRole("heading", { name: "Reminders" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Enable reminders" }),
+    ).toBeVisible();
+  });
+
+  test("ajustes: si el navegador bloquea las notificaciones se explica cómo desbloquearlas", async ({
+    page,
+  }) => {
+    await setNotificationPermission(page, "denied");
+    await register(page);
+    await page.goto("/settings");
+    await expect(page.getByText(/Notifications are blocked/)).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Enable reminders" }),
+    ).toHaveCount(0);
+  });
+
+  test("el demo incluye un hábito semanal con recordatorio", async ({
+    page,
+  }) => {
+    await page.goto("/login");
+    await page.getByRole("button", { name: "Try the demo" }).click();
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("Demo");
+    await page.goto("/habits");
+    await expect(page.getByTitle("Reminder at 21:00")).toBeVisible();
+    await expect(page.getByText(/of 4 this week/)).toBeVisible();
+  });
+});

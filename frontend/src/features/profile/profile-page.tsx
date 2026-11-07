@@ -28,6 +28,7 @@ import { cn, localISODate } from "@/lib/utils";
 import { AvatarGif } from "@/features/mood/mood-page";
 
 import { PasswordInput } from "@/components/ui/password-input";
+import { RemindersCard } from "./reminders-card";
 const AVATARS = ["male", "female", "prefer_not_to_say"] as const;
 
 function Segmented<T extends string>({
@@ -365,6 +366,8 @@ export function ProfilePage() {
             </div>
           </CardContent>
         </Card>
+
+        <RemindersCard />
 
         <DataExport />
 

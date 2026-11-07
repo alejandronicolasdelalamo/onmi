@@ -68,8 +68,12 @@ export interface Habit {
   color: string;
   archived: boolean;
   goal_id: number | null;
+  target_per_week: number;
+  reminder_time: string | null;
   dates: string[];
   count: number;
+  week_count: number;
+  streak_unit: "day" | "week";
   current_streak: number;
   longest_streak: number;
   done_today: boolean;
@@ -183,6 +187,12 @@ export interface Insights {
   };
   habit_effects: HabitEffect[];
   best_weekday: { weekday: number; completions: number; share: number } | null;
-  top_streak: { name: string; days: number } | null;
+  top_streak: { name: string; count: number; unit: "day" | "week" } | null;
   unlock: { mood_days: number; target: number };
+}
+
+export interface PushStatus {
+  public_key: string | null;
+  subscriptions: number;
+  timezone: string;
 }

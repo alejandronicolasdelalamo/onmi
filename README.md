@@ -27,7 +27,8 @@ Aplicación full-stack con React + TypeScript y una API Flask segura, probada de
 ONMi es una app de productividad personal. Reúne en una sola interfaz lo que normalmente está repartido en varias herramientas:
 
 - **Dashboard** con el resumen del día: hábitos por hacer, racha, minutos de enfoque, proyectos activos, metas próximas y notas.
-- **Hábitos** con calendario de los últimos 14 días, rachas actual y máxima, heatmap estilo GitHub y tasa de cumplimiento a 30 días.
+- **Hábitos** diarios o con objetivo semanal («3 veces por semana», con racha en semanas), calendario de 14 días, rachas actual y máxima, heatmap estilo GitHub y tasa de cumplimiento a 30 días.
+- **Recordatorios push**: cada hábito puede tener una hora de aviso; se envía una notificación (Web Push, aunque la app esté cerrada) solo si sigue pendiente, respetando tu zona horaria y sin insistir si ya cumpliste el objetivo semanal.
 - **Notas** en Markdown con vista previa, etiquetas, búsqueda instantánea, notas fijadas y vínculo a proyectos y metas.
 - **Proyectos** en un tablero Kanban con drag & drop (también con teclado), prioridad, fecha límite y progreso calculado a partir de sus metas.
 - **Metas** que se enlazan con proyectos, hábitos y notas.
@@ -67,7 +68,7 @@ ONMi es una app de productividad personal. Reúne en una sola interfaz lo que no
 | Frontend | React 19, TypeScript, Vite, Tailwind CSS 4, componentes estilo shadcn/ui sobre Radix, TanStack Query, React Hook Form + Zod, dnd-kit, Recharts, cmdk, i18next |
 | Backend | Flask 3, SQLAlchemy 2, Flask-Migrate (Alembic), Flask-JWT-Extended, Flask-Limiter, Pydantic v2, Flask-Admin |
 | Datos | PostgreSQL en producción · SQLite en desarrollo y tests |
-| Calidad | pytest (50 tests, 93 % de cobertura), Vitest + Testing Library (40), Playwright E2E (27, incluida una auditoría de accesibilidad con axe-core), Ruff, ESLint, TypeScript estricto |
+| Calidad | pytest (77 tests, 93 % de cobertura), Vitest + Testing Library (48), Playwright E2E (32, incluida una auditoría de accesibilidad con axe-core), Ruff, ESLint, TypeScript estricto |
 | DevOps | Docker multi-stage, Docker Compose, GitHub Actions, blueprint de Render |
 
 ## Arquitectura
@@ -157,15 +158,27 @@ Vite redirige `/api` al backend, así que no hace falta configurar CORS en local
 | `GOOGLE_CLIENT_ID` | Activa "Continuar con Google". Sin él, el botón se oculta. |
 | `DEMO_ENABLED` | Muestra el botón "Try the demo" (usuario `demo@onmi.app` con datos de ejemplo). |
 | `COOKIE_SECURE` | `true` por defecto en producción. |
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Activan los recordatorios push. Genera el par con `flask generate-vapid`. Sin ellos, la opción se oculta. |
 
 Crear un administrador: `flask create-admin tu@email.com`.
+
+### Recordatorios de hábitos
+
+1. Genera las claves: `flask --app wsgi generate-vapid` y pon `VAPID_PUBLIC_KEY` y `VAPID_PRIVATE_KEY` en el entorno.
+2. Programa `flask --app wsgi send-reminders` **cada 5 minutos** (cron). El proyecto ya lo incluye: un servicio `reminders` en
+   `docker-compose.yml` y un `cron` en `render.yaml`. El comando es idempotente: no repite un aviso el mismo día y solo avisa
+   dentro de las 3 horas siguientes a la hora elegida.
+3. Cada usuario los activa desde **Ajustes → Recordatorios** (el navegador pide permiso).
+
+> Las notificaciones push reales dependen del servicio push de cada navegador y no se pueden automatizar en CI: la lógica de qué
+> y cuándo enviar (zonas horarias, ventana, objetivo semanal, suscripciones caducadas) está cubierta por tests unitarios.
 
 ## Tests
 
 ```bash
-cd backend  && pytest --cov=app          # 50 tests
-cd frontend && npm test                  # 40 tests (Vitest)
-cd frontend && npx playwright install chromium && npm run e2e   # 27 tests de extremo a extremo (19 flujos + 8 de accesibilidad)
+cd backend  && pytest --cov=app          # 77 tests
+cd frontend && npm test                  # 48 tests (Vitest)
+cd frontend && npx playwright install chromium && npm run e2e   # 32 tests de extremo a extremo (24 flujos + 8 de accesibilidad)
 ```
 
 Los E2E arrancan solos una API con base de datos SQLite desechable y el servidor de Vite. Para regenerar las capturas de este

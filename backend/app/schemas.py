@@ -117,8 +117,13 @@ class GoalUpdate(Base):
     done: bool | None = None
 
 
+ReminderTime = Annotated[str, StringConstraints(pattern=r"^([01]\d|2[0-3]):[0-5]\d$")]
+
+
 class HabitIn(Base):
     name: str = Field(min_length=1, max_length=100)
+    target_per_week: int = Field(default=7, ge=1, le=7)
+    reminder_time: ReminderTime | None = None
     description: str = Field(default="", max_length=500)
     category: str | None = Field(default=None, max_length=60)
     color: str = Field(default="#6366f1", pattern=r"^#[0-9a-fA-F]{6}$")
@@ -127,6 +132,8 @@ class HabitIn(Base):
 
 class HabitUpdate(Base):
     name: str | None = Field(default=None, min_length=1, max_length=100)
+    target_per_week: int | None = Field(default=None, ge=1, le=7)
+    reminder_time: ReminderTime | None = None
     description: str | None = Field(default=None, max_length=500)
     category: str | None = Field(default=None, max_length=60)
     color: str | None = Field(default=None, pattern=r"^#[0-9a-fA-F]{6}$")
@@ -154,3 +161,18 @@ class PomodoroIn(Base):
 class AdminUserUpdate(Base):
     role: Literal["user", "admin"] | None = None
     is_active: bool | None = None
+
+
+class PushKeys(Base):
+    p256dh: str = Field(min_length=10, max_length=200)
+    auth: str = Field(min_length=6, max_length=100)
+
+
+class PushSubscribeIn(Base):
+    endpoint: str = Field(min_length=10, max_length=600, pattern=r"^https://")
+    keys: PushKeys
+    timezone: str = Field(default="UTC", min_length=1, max_length=64)
+
+
+class PushUnsubscribeIn(Base):
+    endpoint: str = Field(min_length=10, max_length=600)

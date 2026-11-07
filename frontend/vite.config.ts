@@ -12,6 +12,9 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
+      strategies: "injectManifest",
+      srcDir: "src",
+      filename: "sw.ts",
       registerType: "autoUpdate",
       includeAssets: ["favicon.svg", "avatars/*.gif"],
       manifest: {
@@ -28,16 +31,7 @@ export default defineConfig({
           { src: "favicon.svg", sizes: "any", type: "image/svg+xml", purpose: "any maskable" },
         ],
       },
-      workbox: {
-        navigateFallbackDenylist: [/^\/api/, /^\/docs/, /^\/db-admin/],
-        globPatterns: ["**/*.{js,css,html,svg,png,woff2}"],
-        runtimeCaching: [
-          {
-            urlPattern: ({ url }) => url.pathname.startsWith("/api/"),
-            handler: "NetworkOnly",
-          },
-        ],
-      },
+      injectManifest: { globPatterns: ["**/*.{js,css,html,svg,png,woff2}"] },
     }),
   ],
   resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },

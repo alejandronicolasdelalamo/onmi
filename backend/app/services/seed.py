@@ -163,6 +163,8 @@ def seed_demo_data(user: User, seed: int = 7) -> None:
             name=name,
             category=cat,
             color=color,
+            target_per_week=4 if name == "Meditate" else 7,
+            reminder_time="21:00" if name == "Meditate" else None,
             goal_id=goals[4].id if name == "Morning run" else None,
         )
         db.session.add(habit)

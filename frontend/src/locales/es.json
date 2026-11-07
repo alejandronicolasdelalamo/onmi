@@ -132,7 +132,19 @@
     "more": "Más",
     "toggleDay": "Alternar {{date}}",
     "last14": "Últimos 14 días",
-    "deleteDesc": "Se borrará todo su historial y sus rachas. No se puede deshacer."
+    "deleteDesc": "Se borrará todo su historial y sus rachas. No se puede deshacer.",
+    "frequency": "Frecuencia",
+    "frequencyDaily": "Todos los días",
+    "frequencyWeekly": "{{count}} veces por semana",
+    "frequencyOnce": "Una vez por semana",
+    "reminder": "Recordatorio",
+    "reminderHint": "Te avisaremos si sigue pendiente. Activa las notificaciones en Ajustes.",
+    "reminderAt": "Recordatorio a las {{time}}",
+    "weekProgress": "{{done}} de {{target}} esta semana",
+    "weeklyShort": "{{done}}/{{target}} esta semana",
+    "streakWeeks": "Racha (semanas)",
+    "bestWeeks": "Mejor (semanas)",
+    "weekSuffix": " sem"
   },
   "notes": {
     "title": "Notas",
@@ -391,7 +403,8 @@
     "bestDayDesc": "El {{share}} % de tus hábitos se cumple en {{day}}.",
     "topStreak": "Racha de {{count}} días",
     "topStreakDesc": "{{name}} es tu racha activa más larga.",
-    "outOf": "de 5"
+    "outOf": "de 5",
+    "topStreakWeeks": "Racha de {{count}} semanas"
   },
   "onboarding": {
     "title": "Empieza con ONMi",
@@ -406,6 +419,22 @@
   },
   "celebrate": {
     "title": "¡Racha de {{count}} días!",
-    "description": "Sigue así con {{name}}."
+    "description": "Sigue así con {{name}}.",
+    "titleWeeks": "¡Racha de {{count}} semanas!"
+  },
+  "reminders": {
+    "title": "Recordatorios",
+    "desc": "Recibe una notificación cuando un hábito con hora de recordatorio siga pendiente. La hora se fija al crear o editar el hábito.",
+    "enable": "Activar recordatorios",
+    "enabled": "Los recordatorios están activados en este dispositivo.",
+    "disable": "Desactivar",
+    "test": "Enviar prueba",
+    "testSent": "Notificación de prueba enviada",
+    "testFailed": "No se pudo entregar la prueba",
+    "enabledToast": "Recordatorios activados",
+    "disabledToast": "Recordatorios desactivados",
+    "unsupported": "Este navegador no admite notificaciones push.",
+    "notConfigured": "Los recordatorios aún no están configurados en este servidor.",
+    "blocked": "Las notificaciones están bloqueadas. Permítelas en los ajustes del navegador para activar los recordatorios."
   }
 }

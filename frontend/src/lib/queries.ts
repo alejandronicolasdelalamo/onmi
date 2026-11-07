@@ -253,7 +253,14 @@ export const useHeatmap = (days = 120) =>
 export type HabitInput = Partial<
   Pick<
     Habit,
-    "name" | "description" | "category" | "color" | "goal_id" | "archived"
+    | "name"
+    | "description"
+    | "category"
+    | "color"
+    | "goal_id"
+    | "archived"
+    | "target_per_week"
+    | "reminder_time"
   >
 >;
 const habitKeys = [keys.habits, keys.dashboard, keys.insights] as const;
@@ -318,8 +325,16 @@ export function useToggleHabit() {
       const today = localISODate();
       const completedToday =
         (date ?? today) === today && habit.dates.includes(today);
-      const milestone = milestoneFor(habit.current_streak, completedToday);
-      if (milestone) celebrate(milestone, habit.name);
+      // Hábito semanal: solo se celebra el día que se alcanza el objetivo de la semana (no cada check posterior).
+      const reachedGoal =
+        habit.streak_unit === "day" ||
+        habit.week_count === habit.target_per_week;
+      const milestone = milestoneFor(
+        habit.current_streak,
+        completedToday && reachedGoal,
+        habit.streak_unit,
+      );
+      if (milestone) celebrate(milestone, habit.name, habit.streak_unit);
     },
     onError: (_e, _v, ctx) => {
       ctx?.prevHabits.forEach(([key, data]) => qc.setQueryData(key, data));

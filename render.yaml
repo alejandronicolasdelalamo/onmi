@@ -22,6 +22,30 @@ services:
         sync: false
       - key: GOOGLE_CLIENT_ID
         sync: false
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+
+  # Recordatorios de hábitos: cada 5 minutos revisa y envía los avisos que toquen.
+  - type: cron
+    name: onmi-reminders
+    runtime: docker
+    schedule: "*/5 * * * *"
+    dockerCommand: flask --app wsgi send-reminders
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: onmi-db
+          property: connectionString
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
 
 databases:
   - name: onmi-db

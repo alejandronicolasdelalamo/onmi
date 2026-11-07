@@ -69,6 +69,7 @@ class User(db.Model):
     google_id: Mapped[str | None] = mapped_column(String(64), unique=True)
     avatar: Mapped[str | None] = mapped_column(String(32))
     locale: Mapped[str] = mapped_column(String(5), default="en")
+    timezone: Mapped[str] = mapped_column(String(64), default="UTC", server_default="UTC")
     is_demo: Mapped[bool] = mapped_column(Boolean, default=False)
     failed_logins: Mapped[int] = mapped_column(Integer, default=0)
     locked_until: Mapped[datetime | None] = mapped_column(DateTime)
@@ -82,6 +83,9 @@ class User(db.Model):
     moods: Mapped[list[MoodEntry]] = relationship(back_populates="user", cascade="all, delete-orphan")
     pomodoros: Mapped[list[PomodoroSession]] = relationship(back_populates="user", cascade="all, delete-orphan")
     tokens: Mapped[list[AuthToken]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    push_subscriptions: Mapped[list[PushSubscription]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
 
     def set_password(self, password: str) -> None:
         self.password_hash = generate_password_hash(password)
@@ -262,6 +266,10 @@ class Habit(db.Model):
     category: Mapped[str | None] = mapped_column(String(60))
     color: Mapped[str] = mapped_column(String(16), default="#6366f1")
     archived: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Frecuencia: 7 = todos los días; 1-6 = tantas veces por semana (la racha se cuenta en semanas).
+    target_per_week: Mapped[int] = mapped_column(Integer, default=7, server_default="7")
+    reminder_time: Mapped[str | None] = mapped_column(String(5))  # "HH:MM" en la zona horaria del usuario
+    last_reminded_on: Mapped[date | None] = mapped_column(Date)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
 
     user: Mapped[User] = relationship(back_populates="habits")
@@ -274,13 +282,14 @@ class Habit(db.Model):
         return [log.day for log in self.logs]
 
     def to_dict(self, today_: date | None = None) -> dict:
-        from .services.stats import current_streak, longest_streak
+        from .services.stats import habit_streaks, week_count
 
         days = self.completed_days()
         today_ = today_ or datetime.now(timezone.utc).date()
         # Zona horaria: si el usuario ya está en «mañana» respecto a UTC, su check de hoy cuenta para la racha.
         if days and 0 < (max(days) - today_).days <= 1:
             today_ = max(days)
+        current, longest, unit = habit_streaks(days, self.target_per_week, today_)
         return {
             "id": self.id,
             "name": self.name,
@@ -289,10 +298,14 @@ class Habit(db.Model):
             "color": self.color,
             "archived": self.archived,
             "goal_id": self.goal_id,
+            "target_per_week": self.target_per_week,
+            "reminder_time": self.reminder_time,
             "dates": [d.isoformat() for d in days],
             "count": len(days),
-            "current_streak": current_streak(days, today_),
-            "longest_streak": longest_streak(days),
+            "week_count": week_count(days, today_),
+            "streak_unit": unit,
+            "current_streak": current,
+            "longest_streak": longest,
             "done_today": today_ in days,
             "created_at": self.created_at.isoformat(),
         }
@@ -344,3 +357,20 @@ class PomodoroSession(db.Model):
             "completed": self.completed,
             "started_at": self.started_at.isoformat(),
         }
+
+
+class PushSubscription(db.Model):
+    """Suscripción Web Push de un navegador o dispositivo del usuario (para los recordatorios)."""
+
+    __tablename__ = "push_subscriptions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    endpoint: Mapped[str] = mapped_column(String(600), unique=True)
+    p256dh: Mapped[str] = mapped_column(String(200))
+    auth: Mapped[str] = mapped_column(String(100))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+    user: Mapped[User] = relationship(back_populates="push_subscriptions")
+
+    def to_webpush(self) -> dict:
+        return {"endpoint": self.endpoint, "keys": {"p256dh": self.p256dh, "auth": self.auth}}

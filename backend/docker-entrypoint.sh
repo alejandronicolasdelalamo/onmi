@@ -1,6 +1,11 @@
 #!/bin/sh
 set -e
 
+# Con argumentos (p. ej. `flask --app wsgi send-reminders`) ejecuta ese comando en vez del servidor.
+if [ "$#" -gt 0 ]; then
+  exec "$@"
+fi
+
 # Aplica las migraciones antes de arrancar (idempotente).
 flask --app wsgi db upgrade
 

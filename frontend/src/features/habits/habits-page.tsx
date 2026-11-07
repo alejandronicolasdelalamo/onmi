@@ -2,6 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Archive,
   ArchiveRestore,
+  Bell,
   CalendarCheck,
   Flame,
   MoreHorizontal,
@@ -88,6 +89,8 @@ function HabitDialog({
         category: z.string(),
         color: z.string(),
         goal_id: z.string(),
+        target_per_week: z.string(),
+        reminder_time: z.string(),
       }),
     [t],
   );
@@ -99,6 +102,8 @@ function HabitDialog({
       category: "",
       color: COLORS[0]!,
       goal_id: "",
+      target_per_week: "7",
+      reminder_time: "",
     },
   });
 
@@ -110,6 +115,8 @@ function HabitDialog({
         category: habit?.category ?? "",
         color: habit?.color ?? COLORS[0]!,
         goal_id: habit?.goal_id ? String(habit.goal_id) : "",
+        target_per_week: String(habit?.target_per_week ?? 7),
+        reminder_time: habit?.reminder_time ?? "",
       });
   }, [open, habit, form]);
 
@@ -123,6 +130,8 @@ function HabitDialog({
       category: v.category || null,
       color: v.color,
       goal_id: v.goal_id ? Number(v.goal_id) : null,
+      target_per_week: Number(v.target_per_week),
+      reminder_time: v.reminder_time || null,
     };
     try {
       if (habit) await update.mutateAsync({ id: habit.id, ...body });
@@ -166,6 +175,29 @@ function HabitDialog({
               />
             )}
           </Field>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label={t("habits.frequency")}>
+              {(p) => (
+                <NativeSelect {...p} {...form.register("target_per_week")}>
+                  <option value="7">{t("habits.frequencyDaily")}</option>
+                  {[6, 5, 4, 3, 2].map((n) => (
+                    <option key={n} value={n}>
+                      {t("habits.frequencyWeekly", { count: n })}
+                    </option>
+                  ))}
+                  <option value="1">{t("habits.frequencyOnce")}</option>
+                </NativeSelect>
+              )}
+            </Field>
+            <Field
+              label={`${t("habits.reminder")} (${t("common.optional")})`}
+              hint={t("habits.reminderHint")}
+            >
+              {(p) => (
+                <Input type="time" {...p} {...form.register("reminder_time")} />
+              )}
+            </Field>
+          </div>
           <div className="space-y-1.5">
             <p className="text-sm font-medium">{t("habits.color")}</p>
             <div
@@ -214,6 +246,40 @@ function HabitDialog({
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** Progreso de la semana en curso para hábitos con objetivo semanal (p. ej. 2 de 3). */
+function WeekProgress({ habit }: { habit: Habit }) {
+  const { t } = useTranslation();
+  const filled = Math.min(habit.week_count, habit.target_per_week);
+  const label = t("habits.weekProgress", {
+    done: habit.week_count,
+    target: habit.target_per_week,
+  });
+  return (
+    <div className="space-y-1.5">
+      <p className="text-xs font-medium text-muted-foreground">{label}</p>
+      <div
+        role="progressbar"
+        aria-label={label}
+        aria-valuemin={0}
+        aria-valuemax={habit.target_per_week}
+        aria-valuenow={filled}
+        className="flex gap-1"
+      >
+        {Array.from({ length: habit.target_per_week }, (_, i) => (
+          <span
+            key={i}
+            className={cn(
+              "h-1.5 flex-1 rounded-full",
+              i >= filled && "bg-muted",
+            )}
+            style={i < filled ? { background: habit.color } : undefined}
+          />
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -272,7 +338,16 @@ function HabitCard({ habit, onEdit }: { habit: Habit; onEdit: () => void }) {
             />
             <CardTitle className="truncate text-base">{habit.name}</CardTitle>
           </div>
-          {habit.category && <Badge>{habit.category}</Badge>}
+          <div className="flex flex-wrap gap-1.5">
+            {habit.category && <Badge>{habit.category}</Badge>}
+            {habit.reminder_time && (
+              <Badge
+                title={t("habits.reminderAt", { time: habit.reminder_time })}
+              >
+                <Bell className="size-3" aria-hidden /> {habit.reminder_time}
+              </Badge>
+            )}
+          </div>
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -310,11 +385,22 @@ function HabitCard({ habit, onEdit }: { habit: Habit; onEdit: () => void }) {
         <div className="grid grid-cols-3 gap-2 text-center">
           {[
             {
-              label: t("habits.streak"),
+              label: t(
+                habit.streak_unit === "week"
+                  ? "habits.streakWeeks"
+                  : "habits.streak",
+              ),
               value: habit.current_streak,
               icon: <Flame className="size-3.5 text-warning" />,
             },
-            { label: t("habits.best"), value: habit.longest_streak },
+            {
+              label: t(
+                habit.streak_unit === "week"
+                  ? "habits.bestWeeks"
+                  : "habits.best",
+              ),
+              value: habit.longest_streak,
+            },
             { label: t("habits.total"), value: habit.count },
           ].map((s) => (
             <div key={s.label} className="rounded-md bg-muted/60 px-2 py-2">
@@ -326,6 +412,7 @@ function HabitCard({ habit, onEdit }: { habit: Habit; onEdit: () => void }) {
             </div>
           ))}
         </div>
+        {habit.target_per_week < 7 && <WeekProgress habit={habit} />}
         <LastDays
           habit={habit}
           onToggle={(date) => toggle.mutate({ id: habit.id, date })}

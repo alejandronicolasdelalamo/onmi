@@ -30,6 +30,10 @@ export default defineConfig({
         RATELIMIT_ENABLED: "false",
         FLASK_ENV: "development",
         DEMO_ENABLED: "true",
+        // Claves de ejemplo: solo habilitan la opción en la interfaz (en los tests nunca se envía un push real).
+        VAPID_PUBLIC_KEY:
+          "BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U",
+        VAPID_PRIVATE_KEY: "e2e-private-key-not-used",
         FRONTEND_URL: `http://localhost:${WEB_PORT}`,
       },
     },
