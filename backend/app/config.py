@@ -20,7 +20,9 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY") or secrets.token_hex(32)
-    JWT_TOKEN_LOCATION = ["cookies"]
+    # Navegador: cookies httpOnly + CSRF. Apps nativas: cabecera Authorization (los navegadores no la envían
+    # solos, así que no hay CSRF). Solo se entregan tokens en el cuerpo si el cliente los pide con `X-Client: mobile`.
+    JWT_TOKEN_LOCATION = ["cookies", "headers"]
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=15)
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=14)
     JWT_COOKIE_SECURE = False

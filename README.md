@@ -38,6 +38,7 @@ ONMi es una app de productividad personal. Reúne en una sola interfaz lo que no
 - **Coach semanal**: una revisión escrita de tu semana (qué fue bien, en qué fijarte y una sugerencia). Por defecto la redacta el servidor con plantillas, sin enviar nada fuera. Si el administrador configura una clave y **tú lo activas** en Ajustes, la escribe Claude a partir de datos agregados; si Claude falla, vuelve a la versión local sin errores.
 - **Primeros pasos** para cuentas nuevas, calculados con los datos reales, y **celebración de rachas** (7, 30, 100 días…) con confeti que respeta `prefers-reduced-motion`.
 - **Exportar mis datos** en JSON desde Ajustes.
+- **App nativa** (iOS y Android) con Expo y React Native en [`mobile/`](mobile/README.md): Hoy, hábitos, notas y ajustes sobre la misma API, con sesión por tokens en el almacén seguro del sistema y modo claro/oscuro.
 - **Panel de administración** con métricas de la plataforma y gestión de usuarios (roles, activar/desactivar, borrar).
 - Modo claro/oscuro, interfaz en **inglés y español**, **PWA instalable**, paleta de comandos (`Ctrl+K`) y un **modo demo** con datos de ejemplo.
 
@@ -69,7 +70,7 @@ ONMi es una app de productividad personal. Reúne en una sola interfaz lo que no
 | Frontend | React 19, TypeScript, Vite, Tailwind CSS 4, componentes estilo shadcn/ui sobre Radix, TanStack Query, React Hook Form + Zod, dnd-kit, Recharts, cmdk, i18next |
 | Backend | Flask 3, SQLAlchemy 2, Flask-Migrate (Alembic), Flask-JWT-Extended, Flask-Limiter, Pydantic v2, Flask-Admin |
 | Datos | PostgreSQL en producción · SQLite en desarrollo y tests |
-| Calidad | pytest (100 tests, 94 % de cobertura), Vitest + Testing Library (58), Playwright E2E (36, incluida una auditoría de accesibilidad con axe-core), Ruff, ESLint, TypeScript estricto |
+| Calidad | pytest (113 tests, 94 % de cobertura), Vitest + Testing Library (58), Jest en la app móvil (26), Playwright E2E (36, incluida una auditoría de accesibilidad con axe-core), Ruff, ESLint, TypeScript estricto |
 | DevOps | Docker multi-stage, Docker Compose, GitHub Actions, blueprint de Render |
 
 ## Arquitectura
@@ -191,8 +192,9 @@ revisión se guarda por semana (no se regenera sin motivo) y regenerarla tiene u
 ## Tests
 
 ```bash
-cd backend  && pytest --cov=app          # 100 tests
+cd backend  && pytest --cov=app          # 113 tests
 cd frontend && npm test                  # 58 tests (Vitest)
+cd mobile   && npm test                  # 26 tests (Jest) + `npm run export:android` para validar el bundle
 cd frontend && npx playwright install chromium && npm run e2e   # 36 tests de extremo a extremo (28 flujos + 8 de accesibilidad)
 ```
 
@@ -219,6 +221,7 @@ onmi/
 │   │   ├── lib/          # cliente API, auth, tema, i18n, hooks de datos
 │   │   └── locales/      # en.json, es.json
 │   └── e2e/              # Playwright
+├── mobile/               # app nativa (Expo + React Native)
 ├── docs/                 # arquitectura y capturas
 ├── Dockerfile · docker-compose.yml · render.yaml
 └── .github/workflows/ci.yml

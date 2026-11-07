@@ -23,3 +23,9 @@ frontend/test-results/
 .DS_Store
 Thumbs.db
 *.log
+
+# Configuración local de herramientas de IA (no forma parte del proyecto)
+.claude/
+**/.claude/
+AGENTS.md
+CLAUDE.md

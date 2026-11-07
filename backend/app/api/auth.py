@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 import requests
-from flask import Blueprint, current_app, jsonify
+from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import (
     create_access_token,
     create_refresh_token,
@@ -33,12 +33,23 @@ bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 DEMO_EMAIL = "demo@onmi.app"
 
 
+def _is_mobile() -> bool:
+    """Las apps nativas se identifican con `X-Client: mobile` y reciben los tokens en el cuerpo."""
+    return request.headers.get("X-Client", "").lower() == "mobile"
+
+
 def _session_response(user: User, status: int = 200):
-    """Respuesta con la sesión iniciada: tokens JWT en cookies httpOnly."""
-    resp = jsonify({"user": user.to_dict()})
-    resp.status_code = status
-    set_access_cookies(resp, create_access_token(identity=str(user.id)))
-    set_refresh_cookies(resp, create_refresh_token(identity=str(user.id)))
+    """Sesión iniciada: navegador -> tokens JWT en cookies httpOnly; app nativa -> tokens en el cuerpo (sin cookies)."""
+    access = create_access_token(identity=str(user.id))
+    refresh_token = create_refresh_token(identity=str(user.id))
+    if _is_mobile():
+        resp = jsonify({"user": user.to_dict(), "access_token": access, "refresh_token": refresh_token})
+        resp.status_code = status
+    else:
+        resp = jsonify({"user": user.to_dict()})
+        resp.status_code = status
+        set_access_cookies(resp, access)
+        set_refresh_cookies(resp, refresh_token)
     user.last_login_at = utcnow()
     db.session.commit()
     return resp
@@ -119,8 +130,11 @@ def refresh():
     user = db.session.get(User, int(get_jwt_identity()))
     if user is None or not user.is_active:
         raise ApiError("User unavailable", 401, "unauthorized")
+    access = create_access_token(identity=str(user.id))
+    if _is_mobile():
+        return jsonify({"user": user.to_dict(), "access_token": access})
     resp = jsonify({"user": user.to_dict()})
-    set_access_cookies(resp, create_access_token(identity=str(user.id)))
+    set_access_cookies(resp, access)
     return resp
 
 
