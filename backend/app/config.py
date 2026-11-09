@@ -45,6 +45,8 @@ class Config:
     # Web Push (recordatorios). Genera las claves con `flask generate-vapid`. Sin ellas, la opción se oculta.
     VAPID_PUBLIC_KEY = os.getenv("VAPID_PUBLIC_KEY", "")
     VAPID_PRIVATE_KEY = os.getenv("VAPID_PRIVATE_KEY", "")
+    # Token para /api/internal/tick (cron externo). Vacío = el endpoint no existe.
+    CRON_TOKEN = os.getenv("CRON_TOKEN", "")
     VAPID_SUBJECT = os.getenv("VAPID_SUBJECT", "mailto:no-reply@onmi.app")
     # Coach semanal con IA (opcional). Sin clave se usa siempre el redactor local.
     ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
