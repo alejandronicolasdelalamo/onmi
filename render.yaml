@@ -1,4 +1,6 @@
-# Blueprint de Render: Docker (frontend + API en un servicio) + PostgreSQL gestionado.
+# Servicio web de Render: Docker (frontend + API en un servicio), plan gratuito.
+# La base de datos es PostgreSQL en Neon (DATABASE_URL) y los recordatorios push
+# corren en GitHub Actions (.github/workflows/reminders.yml), así que no hay nada de pago.
 services:
   - type: web
     name: onmi
@@ -11,9 +13,7 @@ services:
       - key: JWT_SECRET_KEY
         generateValue: true
       - key: DATABASE_URL
-        fromDatabase:
-          name: onmi-db
-          property: connectionString
+        sync: false # cadena de conexión de Neon
       - key: FRONTEND_URL
         sync: false # https://<tu-servicio>.onrender.com
       - key: DEMO_ENABLED
@@ -30,27 +30,3 @@ services:
         sync: false
       - key: ANTHROPIC_API_KEY
         sync: false
-
-  # Recordatorios de hábitos: cada 5 minutos revisa y envía los avisos que toquen.
-  - type: cron
-    name: onmi-reminders
-    runtime: docker
-    schedule: "*/5 * * * *"
-    dockerCommand: flask --app wsgi send-reminders
-    envVars:
-      - key: SECRET_KEY
-        generateValue: true
-      - key: JWT_SECRET_KEY
-        generateValue: true
-      - key: DATABASE_URL
-        fromDatabase:
-          name: onmi-db
-          property: connectionString
-      - key: VAPID_PUBLIC_KEY
-        sync: false
-      - key: VAPID_PRIVATE_KEY
-        sync: false
-
-databases:
-  - name: onmi-db
-    plan: free
