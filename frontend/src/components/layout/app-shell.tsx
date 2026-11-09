@@ -226,11 +226,12 @@ export function AppShell() {
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
-                    className="h-10 gap-1 px-1.5 pointer-coarse:h-11"
+                    // El Button fija 16 px a sus SVG; estos selectores, más específicos, agrandan el logo.
+                    className="h-12 gap-1 px-2 [&_svg:first-child]:size-10 [&_svg:last-child]:size-5 [&_svg:last-child]:text-foreground/70"
                     aria-label={t("nav.menu")}
                   >
                     <LogoMark />
-                    <ChevronDown className="size-4 text-muted-foreground" />
+                    <ChevronDown />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="w-56">
@@ -259,7 +260,7 @@ export function AppShell() {
               <NavLink
                 to="/"
                 end
-                className="rounded-md px-1 text-lg font-semibold tracking-tight"
+                className="rounded-md px-1 text-xl font-semibold tracking-tight"
               >
                 ONMi
               </NavLink>
