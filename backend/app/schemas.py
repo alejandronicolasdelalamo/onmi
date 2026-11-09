@@ -200,6 +200,14 @@ RepeatLiteral = Literal["none", "daily", "weekdays", "weekly_count"]
 HexColor = Annotated[str, StringConstraints(pattern=r"^#[0-9a-fA-F]{6}$")]
 
 
+class FieldError(ValueError):
+    """Regla que cruza campos rota; `field` dice a qué campo mostrarle el error al usuario."""
+
+    def __init__(self, field: str, message: str):
+        super().__init__(message)
+        self.field = field
+
+
 class CalendarEventIn(Base):
     title: str = Field(min_length=1, max_length=120)
     notes: str = Field(default="", max_length=1000)
@@ -224,13 +232,14 @@ class CalendarEventIn(Base):
     def check(self) -> "CalendarEventIn":
         """Reglas que cruzan campos (se llama tras validar; también en PATCH con el evento ya fusionado)."""
         if self.repeat == "weekdays" and not self.weekdays:
-            raise ValueError("Pick at least one weekday")
+            raise FieldError("weekdays", "Pick at least one weekday")
         if self.repeat == "weekly_count" and self.per_week is None:
-            raise ValueError("per_week is required for weekly_count")
-        if self.until and self.until < self.start_date:
-            raise ValueError("until cannot be before start_date")
+            raise FieldError("per_week", "per_week is required for weekly_count")
+        # Sin repetición la fecha final no se usa (se descarta al guardar), así que no puede bloquear el evento.
+        if self.repeat != "none" and self.until and self.until < self.start_date:
+            raise FieldError("until", "The end date cannot be before the start date")
         if self.duration_min and not self.start_time:
-            raise ValueError("duration_min needs start_time")
+            raise FieldError("duration_min", "duration_min needs start_time")
         return self
 
 

@@ -11,6 +11,7 @@ import {
 import { Field, Input, NativeSelect, Textarea } from "@/components/ui/form";
 import { ShareToggle } from "@/components/ui/share-toggle";
 import { Switch } from "@/components/ui/switch";
+import { ApiError } from "@/lib/api";
 import { errorMessage } from "@/lib/errors";
 import {
   useCreateEvent,
@@ -52,6 +53,11 @@ const blank = (day: string): EventInput => ({
   shared: false,
 });
 
+/** Campos que pueden mostrar un error junto a sí mismos; `form` es un aviso general del formulario. */
+type FieldKey = "title" | "start_date" | "weekdays" | "until" | "form";
+type FormErrors = Partial<Record<FieldKey, string>>;
+const FIELD_KEYS: FieldKey[] = ["title", "start_date", "weekdays", "until"];
+
 function EventForm({
   event,
   defaultDay,
@@ -79,11 +85,23 @@ function EventForm({
     per_week: base.per_week ?? 3,
   }));
   const [allDay, setAllDay] = useState(!base.start_time);
-  const [error, setError] = useState<string>();
+  const [errors, setErrors] = useState<FormErrors>({});
   const [confirm, setConfirm] = useState(false);
 
-  const set = <K extends keyof EventInput>(k: K, value: EventInput[K]) =>
+  const set = <K extends keyof EventInput>(k: K, value: EventInput[K]) => {
     setV((p) => ({ ...p, [k]: value }));
+    // Al corregir un campo desaparece su aviso (y el general); cambiar la fecha de inicio revalida la final.
+    setErrors((p) =>
+      Object.keys(p).length === 0
+        ? p
+        : {
+            ...p,
+            [k]: undefined,
+            ...(k === "start_date" ? { until: undefined } : {}),
+            form: undefined,
+          },
+    );
+  };
 
   const toggleDay = (d: number) =>
     set(
@@ -95,10 +113,20 @@ function EventForm({
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!v.title.trim()) return setError(t("errors.required"));
+    const next: FormErrors = {};
+    if (!v.title.trim()) next.title = t("errors.required");
+    if (!v.start_date) next.start_date = t("errors.required");
     if (v.repeat === "weekdays" && v.weekdays.length === 0)
-      return setError(t("calendar.pickDay"));
-    setError(undefined);
+      next.weekdays = t("calendar.pickDay");
+    if (
+      v.repeat !== "none" &&
+      v.until &&
+      v.start_date &&
+      v.until < v.start_date
+    )
+      next.until = t("calendar.untilBeforeStart");
+    setErrors(next);
+    if (Object.keys(next).length > 0) return;
     const body: EventInput = {
       ...v,
       title: v.title.trim(),
@@ -115,6 +143,19 @@ function EventForm({
       toast.success(t("common.saved"));
       onOpenChange(false);
     } catch (err) {
+      // Si el servidor rechaza algo, se muestra el motivo en su campo (o en un aviso general), no solo un toast.
+      const server: FormErrors = {};
+      if (err instanceof ApiError && err.details?.length) {
+        for (const d of err.details) {
+          const key = FIELD_KEYS.find((k) => k === d.field);
+          if (key) server[key] = d.message;
+          else
+            server.form = server.form
+              ? `${server.form} ${d.message}`
+              : d.message;
+        }
+      }
+      setErrors(server);
       toast.error(errorMessage(err, t));
     }
   };
@@ -125,10 +166,7 @@ function EventForm({
   return (
     <>
       <form onSubmit={submit} className="space-y-4" noValidate>
-        <Field
-          label={t("calendar.eventTitle")}
-          error={error && !v.title.trim() ? error : undefined}
-        >
+        <Field label={t("calendar.eventTitle")} error={errors.title}>
           {(p) => (
             <Input
               autoFocus={!event}
@@ -162,7 +200,7 @@ function EventForm({
         </fieldset>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label={t("calendar.date")}>
+          <Field label={t("calendar.date")} error={errors.start_date}>
             {(p) => (
               <Input
                 type="date"
@@ -282,9 +320,9 @@ function EventForm({
                 {t("calendar.presetAll")}
               </Button>
             </div>
-            {error && v.weekdays.length === 0 && (
+            {errors.weekdays && (
               <p role="alert" className="text-xs text-destructive">
-                {error}
+                {errors.weekdays}
               </p>
             )}
             <Field label={t("calendar.everyWeeks")}>
@@ -336,7 +374,11 @@ function EventForm({
         )}
 
         {v.repeat !== "none" && (
-          <Field label={t("calendar.until")} hint={t("calendar.untilHint")}>
+          <Field
+            label={t("calendar.until")}
+            hint={t("calendar.untilHint")}
+            error={errors.until}
+          >
             {(p) => (
               <Input
                 type="date"
@@ -370,6 +412,12 @@ function EventForm({
           }
           disabled={!canShare}
         />
+
+        {errors.form && (
+          <p role="alert" className="text-sm text-destructive">
+            {errors.form}
+          </p>
+        )}
 
         <DialogFooter>
           {event && (

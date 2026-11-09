@@ -50,7 +50,8 @@ def _validated(payload: dict) -> CalendarEventIn:
         details = [{"field": ".".join(str(p) for p in e["loc"]), "message": e["msg"]} for e in exc.errors()]
         raise ApiError("Invalid data", 422, "validation_error", details) from exc
     except ValueError as exc:
-        raise ApiError("Invalid data", 422, "validation_error", [{"field": "repeat", "message": str(exc)}]) from exc
+        field = getattr(exc, "field", "repeat")
+        raise ApiError("Invalid data", 422, "validation_error", [{"field": field, "message": str(exc)}]) from exc
 
 
 def _apply(event: CalendarEvent, data: CalendarEventIn) -> None:
@@ -132,6 +133,9 @@ def update_event(event_id):
         )
     merged = {**event.to_dict(), **patch}
     merged.pop("id", None)
+    # Quitar la hora (evento de todo el día) quita también la duración, que no tiene sentido sin hora.
+    if "start_time" in patch and not patch["start_time"] and "duration_min" not in patch:
+        merged["duration_min"] = None
     _apply(event, _validated(merged))
     db.session.commit()
     return jsonify(event.to_dict())

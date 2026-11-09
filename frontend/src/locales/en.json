@@ -586,6 +586,7 @@
     "perWeekHint_other": "It shows up every day until you tick {{count}} days this week. You decide which days.",
     "until": "Ends on",
     "untilHint": "Leave empty to repeat forever.",
+    "untilBeforeStart": "The end date can't be before the start date.",
     "notes": "Notes",
     "shareEvent": "Show to people I share my calendar with",
     "shareEventHint": "Only the title, time and whether it is done. Notes are never shared.",

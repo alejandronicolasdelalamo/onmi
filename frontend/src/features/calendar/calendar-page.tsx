@@ -324,8 +324,10 @@ export function CalendarPage() {
               <Users />{" "}
               <span className="max-sm:sr-only">{t("calendar.share")}</span>
             </Button>
-            <Button onClick={() => openNew()} className="max-lg:hidden">
-              <Plus /> {t("calendar.newEvent")}
+            {/* También en móvil (solo el icono): un botón flotante tapaba los lápices de editar. */}
+            <Button onClick={() => openNew()}>
+              <Plus />{" "}
+              <span className="max-sm:sr-only">{t("calendar.newEvent")}</span>
             </Button>
           </>
         }
@@ -643,15 +645,6 @@ export function CalendarPage() {
           )}
         </div>
       )}
-
-      <button
-        type="button"
-        onClick={() => openNew()}
-        aria-label={t("calendar.newEvent")}
-        className="fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom))] right-4 z-30 grid size-14 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform active:scale-95 lg:hidden"
-      >
-        <Plus className="size-6" />
-      </button>
 
       <EventDialog
         event={editing}

@@ -586,6 +586,7 @@
     "perWeekHint_other": "Aparece cada día hasta que marques {{count}} días esta semana. Tú decides cuáles.",
     "until": "Termina el",
     "untilHint": "Déjalo vacío para repetirlo siempre.",
+    "untilBeforeStart": "La fecha final no puede ser anterior a la de inicio.",
     "notes": "Notas",
     "shareEvent": "Mostrar a quien comparto mi calendario",
     "shareEventHint": "Solo el título, la hora y si está hecho. Las notas nunca se comparten.",

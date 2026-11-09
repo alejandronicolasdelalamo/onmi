@@ -26,6 +26,7 @@ from ..models import (
 from ..utils import today, utcnow
 
 DEMO_EMAIL = "demo@onmi.app"
+SAM_EMAIL = "sam@demo.onmi.app"
 
 NOTES = [
     (
@@ -221,7 +222,7 @@ def _seed_buddy(user: User, demo_habits: dict[str, Habit], rng: random.Random, t
     """Un compañero de ejemplo ya aceptado, con un hábito privado para mostrar qué NO se comparte."""
     sam = User(
         name="Sam Rivera",
-        email="sam@demo.onmi.app",
+        email=SAM_EMAIL,
         bio="Reading more, running a bit further each week.",
         is_demo=True,
         email_verified=True,
@@ -274,6 +275,12 @@ def _seed_buddy(user: User, demo_habits: dict[str, Habit], rng: random.Random, t
 
 def _seed_calendar(user: User, sam: User, t) -> None:
     """Calendario de ejemplo: un evento por cada tipo de repetición; Sam comparte el suyo con el demo."""
+    _seed_my_events(user, t)
+    _seed_sam_calendar(user, sam, t)
+    db.session.add(CalendarShare(owner_id=sam.id, viewer_id=user.id))
+
+
+def _seed_my_events(user: User, t) -> None:
     monday = t - timedelta(days=t.weekday())
     mine = [
         ("Deep work", "#6366f1", "09:00", 60, "daily", "", None, True),
@@ -296,6 +303,10 @@ def _seed_calendar(user: User, sam: User, t) -> None:
                 shared=shared,
             )
         )
+
+
+def _seed_sam_calendar(user: User, sam: User, t) -> None:
+    monday = t - timedelta(days=t.weekday())
     db.session.add(
         CalendarEvent(
             user_id=sam.id,
@@ -320,7 +331,6 @@ def _seed_calendar(user: User, sam: User, t) -> None:
             shared=False,
         )
     )
-    db.session.add(CalendarShare(owner_id=sam.id, viewer_id=user.id))
 
 
 def ensure_demo_user() -> User:
@@ -331,4 +341,28 @@ def ensure_demo_user() -> User:
         db.session.commit()
     if not db.session.scalar(db.select(db.func.count(Habit.id)).filter_by(user_id=user.id)):
         seed_demo_data(user)
+    else:
+        _ensure_demo_calendar(user)
     return user
+
+
+def _ensure_demo_calendar(user: User) -> None:
+    """Completa el calendario de ejemplo en una demo creada antes de que existiera el calendario (o vaciada).
+
+    Solo añade lo que falta: nunca duplica los eventos de Sam ni su permiso para que el demo los vea.
+    """
+    t = today()
+    changed = False
+    if not db.session.scalar(db.select(db.func.count(CalendarEvent.id)).filter_by(user_id=user.id)):
+        _seed_my_events(user, t)
+        changed = True
+    sam = db.session.scalar(db.select(User).filter_by(email=SAM_EMAIL))
+    if sam is not None:
+        if not db.session.scalar(db.select(db.func.count(CalendarEvent.id)).filter_by(user_id=sam.id)):
+            _seed_sam_calendar(user, sam, t)
+            changed = True
+        if not db.session.scalar(db.select(CalendarShare.id).filter_by(owner_id=sam.id, viewer_id=user.id)):
+            db.session.add(CalendarShare(owner_id=sam.id, viewer_id=user.id))
+            changed = True
+    if changed:
+        db.session.commit()
