@@ -20,6 +20,8 @@ services:
         value: "true"
       - key: SENDGRID_API_KEY
         sync: false
+      - key: MAIL_FROM
+        sync: false # remitente verificado en SendGrid
       - key: GOOGLE_CLIENT_ID
         sync: false
       - key: VAPID_PUBLIC_KEY

@@ -11,7 +11,11 @@ def database_url() -> str:
     url = os.getenv("DATABASE_URL")
     if not url:
         return f"sqlite:///{BASE_DIR / 'instance' / 'onmi.db'}"
-    return url.replace("postgres://", "postgresql://", 1)
+    # SQLAlchemy 2.1 usa psycopg 3 por defecto; el proyecto instala psycopg2, así que se fija el driver.
+    for prefix in ("postgres://", "postgresql://"):
+        if url.startswith(prefix):
+            return "postgresql+psycopg2://" + url[len(prefix) :]
+    return url
 
 
 class Config:
