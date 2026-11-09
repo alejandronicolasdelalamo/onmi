@@ -1,6 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import {
   BookOpen,
+  ChevronDown,
   Ellipsis,
   Home,
   Languages,
@@ -16,7 +17,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Logo } from "@/components/brand";
+import { Logo, LogoMark } from "@/components/brand";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -219,8 +220,49 @@ export function AppShell() {
       <div className="flex min-w-0 flex-col">
         <header className="sticky top-0 z-30 border-b border-border bg-background/85 pt-[env(safe-area-inset-top)] backdrop-blur-md">
           <div className="flex h-14 items-center gap-2 px-4">
-            <div className="lg:hidden">
-              <Logo />
+            {/* Móvil: el botón del logo abre el menú completo y la palabra «ONMi» lleva al inicio. */}
+            <div className="flex items-center gap-1 lg:hidden">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="h-10 gap-1 px-1.5 pointer-coarse:h-11"
+                    aria-label={t("nav.menu")}
+                  >
+                    <LogoMark />
+                    <ChevronDown className="size-4 text-muted-foreground" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-56">
+                  {NAV.map((n) => (
+                    <DropdownMenuItem key={n.to} asChild>
+                      <NavLink to={n.to} end={"end" in n ? n.end : undefined}>
+                        <n.icon /> {t(`nav.${n.key}`)}
+                      </NavLink>
+                    </DropdownMenuItem>
+                  ))}
+                  <DropdownMenuSeparator />
+                  {user.role === "admin" && (
+                    <DropdownMenuItem asChild>
+                      <NavLink to="/admin">
+                        <ShieldCheck /> {t("nav.admin")}
+                      </NavLink>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem asChild>
+                    <NavLink to="/settings">
+                      <Settings /> {t("nav.profile")}
+                    </NavLink>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <NavLink
+                to="/"
+                end
+                className="rounded-md px-1 text-lg font-semibold tracking-tight"
+              >
+                ONMi
+              </NavLink>
             </div>
             <button
               onClick={() => setPaletteOpen(true)}

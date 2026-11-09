@@ -40,6 +40,23 @@ test.describe("móvil", () => {
     await expect(page.getByRole("link", { name: "Goals" })).toBeHidden();
   });
 
+  test("el botón del logo abre un desplegable y la palabra ONMi lleva al inicio", async ({
+    page,
+  }) => {
+    await register(page);
+    await page.goto("/habits");
+    await page.getByRole("button", { name: "Open menu" }).click();
+    await expect(
+      page.getByRole("menuitem", { name: "Calendar" }),
+    ).toBeVisible();
+    await page.getByRole("menuitem", { name: "Goals" }).click();
+    await expect(page).toHaveURL(/\/goals$/);
+    // El desplegable se cierra al elegir.
+    await expect(page.getByRole("menuitem", { name: "Goals" })).toBeHidden();
+    await page.getByRole("link", { name: "ONMi", exact: true }).click();
+    await expect(page).toHaveURL(/\/$/);
+  });
+
   test("las acciones de editar y borrar son visibles sin pasar el ratón", async ({
     page,
   }) => {
