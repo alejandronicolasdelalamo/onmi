@@ -19,7 +19,7 @@ import {
 import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
 import { Field, Input } from "@/components/ui/form";
 import { api } from "@/lib/api";
-import { useAuth, useSetLanguage } from "@/lib/auth";
+import { useAuth, usePublicConfig, useSetLanguage } from "@/lib/auth";
 import { errorMessage } from "@/lib/errors";
 import i18n, { LANGUAGES } from "@/lib/i18n";
 import { useTheme, type Theme } from "@/lib/theme";
@@ -234,10 +234,13 @@ export function ProfilePage() {
   const setLanguage = useSetLanguage();
   const { theme, setTheme } = useTheme();
   const [name, setName] = useState(user?.name ?? "");
+  const [bio, setBio] = useState(user?.bio ?? "");
+  const { data: config } = usePublicConfig();
 
   const patch = useMutation({
-    mutationFn: (body: Partial<Pick<User, "name" | "avatar" | "locale">>) =>
-      api.patch<{ user: User }>("/api/auth/me", body),
+    mutationFn: (
+      body: Partial<Pick<User, "name" | "avatar" | "locale" | "bio">>,
+    ) => api.patch<{ user: User }>("/api/auth/me", body),
     onSuccess: ({ user }) => {
       setUser(user);
       toast.success(t("common.saved"));
@@ -289,9 +292,38 @@ export function ProfilePage() {
                 {t("common.save")}
               </Button>
             </form>
+            <form
+              className="flex items-end gap-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (bio.trim() !== user.bio) patch.mutate({ bio: bio.trim() });
+              }}
+            >
+              <Field
+                className="flex-1"
+                label={t("profile.bio")}
+                hint={t("profile.bioHint")}
+              >
+                {(p) => (
+                  <Input
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value)}
+                    maxLength={160}
+                    placeholder={t("profile.bioPlaceholder")}
+                    {...p}
+                  />
+                )}
+              </Field>
+              <Button
+                type="submit"
+                disabled={patch.isPending || bio.trim() === user.bio}
+              >
+                {t("common.save")}
+              </Button>
+            </form>
             <div className="flex items-center justify-between rounded-md bg-muted/60 px-3 py-2 text-sm">
               <span>{user.email}</span>
-              {user.email_verified ? (
+              {!config?.mail_enabled ? null : user.email_verified ? (
                 <Badge tone="success">
                   <BadgeCheck className="size-3" /> {t("profile.emailVerified")}
                 </Badge>

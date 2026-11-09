@@ -109,7 +109,7 @@ export function DashboardPage() {
                   : t("dashboard.moodTitle")}
               </p>
               <div
-                className="flex gap-1.5"
+                className="flex flex-wrap gap-1.5"
                 role="group"
                 aria-label={t("dashboard.moodTitle")}
               >

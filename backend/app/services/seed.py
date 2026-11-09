@@ -249,6 +249,21 @@ def _seed_buddy(user: User, demo_habits: dict[str, Habit], rng: random.Random, t
             accepted_at=utcnow(),
         )
     )
+    for title, done, shared, due in [
+        ("Run a half marathon", False, True, 60),
+        ("Read 24 books this year", False, True, 200),
+        ("Finish the photography course", True, True, None),
+        ("Look for a new job", False, False, 30),  # privada: el demo nunca la ve
+    ]:
+        db.session.add(
+            Goal(
+                user_id=sam.id,
+                title=title,
+                done=done,
+                shared=shared,
+                due_date=t + timedelta(days=due) if due else None,
+            )
+        )
     _seed_calendar(user, sam, t)
     db.session.add(
         Cheer(

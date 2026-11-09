@@ -16,7 +16,24 @@ export default defineConfig({
     trace: "retain-on-failure",
     locale: "en-US",
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: [
+    {
+      name: "chromium",
+      testIgnore: /mobile\.spec\.ts/,
+      use: { ...devices["Desktop Chrome"] },
+    },
+    // Móvil: viewport de teléfono con pantalla táctil (sin hover) para comprobar la experiencia en iPhone/Android.
+    {
+      name: "mobile",
+      testMatch: /mobile\.spec\.ts/,
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 390, height: 844 },
+        isMobile: true,
+        hasTouch: true,
+      },
+    },
+  ],
   webServer: [
     {
       // API con base de datos SQLite desechable y sin rate limit.

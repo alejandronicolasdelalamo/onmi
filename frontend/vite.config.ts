@@ -24,11 +24,31 @@ export default defineConfig({
         theme_color: "#6366f1",
         background_color: "#ffffff",
         display: "standalone",
+        orientation: "portrait",
+        id: "/",
+        categories: ["productivity", "lifestyle"],
         start_url: "/",
+        shortcuts: [
+          {
+            name: "Habits",
+            url: "/habits",
+            icons: [{ src: "icon-192.png", sizes: "192x192" }],
+          },
+          {
+            name: "Calendar",
+            url: "/calendar",
+            icons: [{ src: "icon-192.png", sizes: "192x192" }],
+          },
+        ],
         icons: [
           { src: "icon-192.png", sizes: "192x192", type: "image/png" },
           { src: "icon-512.png", sizes: "512x512", type: "image/png" },
-          { src: "favicon.svg", sizes: "any", type: "image/svg+xml", purpose: "any maskable" },
+          {
+            src: "favicon.svg",
+            sizes: "any",
+            type: "image/svg+xml",
+            purpose: "any maskable",
+          },
         ],
       },
       injectManifest: { globPatterns: ["**/*.{js,css,html,svg,png,woff2}"] },
@@ -48,10 +68,27 @@ export default defineConfig({
       output: {
         manualChunks(id: string) {
           if (!id.includes("node_modules")) return undefined;
-          if (id.includes("recharts") || id.includes("d3-") || id.includes("victory-vendor")) return "charts";
-          if (id.includes("react-markdown") || id.includes("remark") || id.includes("micromark") || id.includes("mdast") || id.includes("unified")) return "markdown";
+          if (
+            id.includes("recharts") ||
+            id.includes("d3-") ||
+            id.includes("victory-vendor")
+          )
+            return "charts";
+          if (
+            id.includes("react-markdown") ||
+            id.includes("remark") ||
+            id.includes("micromark") ||
+            id.includes("mdast") ||
+            id.includes("unified")
+          )
+            return "markdown";
           if (id.includes("@dnd-kit")) return "dnd";
-          if (/node_modules\/(react|react-dom|react-router|react-router-dom|scheduler)\//.test(id)) return "react";
+          if (
+            /node_modules\/(react|react-dom|react-router|react-router-dom|scheduler)\//.test(
+              id,
+            )
+          )
+            return "react";
           return undefined;
         },
       },

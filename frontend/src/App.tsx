@@ -40,6 +40,16 @@ const BuddiesPage = lazy(() =>
     default: m.BuddiesPage,
   })),
 );
+const CalendarPage = lazy(() =>
+  import("@/features/calendar/calendar-page").then((m) => ({
+    default: m.CalendarPage,
+  })),
+);
+const BuddyProfilePage = lazy(() =>
+  import("@/features/buddies/buddy-profile-page").then((m) => ({
+    default: m.BuddyProfilePage,
+  })),
+);
 const InsightsPage = lazy(() =>
   import("@/features/insights/insights-page").then((m) => ({
     default: m.InsightsPage,
@@ -151,6 +161,8 @@ export function AppRoutes() {
           <Route path="focus" element={<PomodoroPage />} />
           <Route path="insights" element={<InsightsPage />} />
           <Route path="buddies" element={<BuddiesPage />} />
+          <Route path="buddies/:id" element={<BuddyProfilePage />} />
+          <Route path="calendar" element={<CalendarPage />} />
           <Route path="settings" element={<ProfilePage />} />
           <Route
             path="admin"

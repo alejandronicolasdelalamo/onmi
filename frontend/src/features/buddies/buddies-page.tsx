@@ -7,13 +7,16 @@ import {
   MoreHorizontal,
   RefreshCw,
   UserMinus,
+  UserRound,
   Users,
 } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { Page, PageHeader } from "@/components/page";
 import { QueryError } from "@/components/query-error";
+import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   Badge,
@@ -41,22 +44,11 @@ import type {
   BuddyHabit,
   BuddyRelation,
 } from "@/lib/types";
-import { cn, initials } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 const KEY = ["buddies"] as const;
 
-function Avatar({ name }: { name: string }) {
-  return (
-    <span
-      aria-hidden
-      className="grid size-10 shrink-0 place-items-center rounded-full bg-accent text-sm font-semibold text-accent-foreground"
-    >
-      {initials(name)}
-    </span>
-  );
-}
-
-function HabitLine({
+export function HabitLine({
   habit,
   friendName,
   canCheer,
@@ -64,8 +56,9 @@ function HabitLine({
 }: {
   habit: BuddyHabit;
   friendName: string;
-  canCheer: boolean;
-  onCheer: () => void;
+  canCheer?: boolean;
+  /** Sin esta función (p. ej. en el mini perfil) no se muestra el corazón. */
+  onCheer?: () => void;
 }) {
   const { t } = useTranslation();
   const weekly = habit.target_per_week < 7;
@@ -77,8 +70,8 @@ function HabitLine({
         aria-hidden
       />
       <div className="min-w-0 flex-1 space-y-1">
-        <p className="flex items-center gap-2 text-sm font-medium">
-          <span className="truncate">{habit.name}</span>
+        <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium">
+          <span className="min-w-0 break-words">{habit.name}</span>
           {habit.done_today && (
             <Badge tone="success">
               <Check className="size-3" aria-hidden /> {t("buddies.doneToday")}
@@ -113,19 +106,21 @@ function HabitLine({
           {habit.streak_unit === "week" ? t("habits.weekSuffix") : ""}
         </Badge>
       )}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="size-8"
-        disabled={!canCheer}
-        onClick={onCheer}
-        aria-label={t("buddies.cheerHabit", {
-          name: friendName,
-          habit: habit.name,
-        })}
-      >
-        <Heart />
-      </Button>
+      {onCheer && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-8 pointer-coarse:size-10"
+          disabled={!canCheer}
+          onClick={onCheer}
+          aria-label={t("buddies.cheerHabit", {
+            name: friendName,
+            habit: habit.name,
+          })}
+        >
+          <Heart />
+        </Button>
+      )}
     </li>
   );
 }
@@ -149,7 +144,14 @@ function FriendCard({
         <div className="flex min-w-0 items-center gap-3">
           <Avatar name={name} />
           <div className="min-w-0">
-            <CardTitle className="truncate text-base">{name}</CardTitle>
+            <CardTitle className="truncate text-base">
+              <Link
+                to={`/buddies/${friend.user.id}`}
+                className="rounded-sm hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+              >
+                {name}
+              </Link>
+            </CardTitle>
             <p className="text-xs text-muted-foreground">
               {t("buddies.sharedCount", { count: friend.habits.length })}
             </p>
@@ -167,6 +169,11 @@ function FriendCard({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
+            <DropdownMenuItem asChild>
+              <Link to={`/buddies/${friend.user.id}`}>
+                <UserRound /> {t("buddies.viewProfile")}
+              </Link>
+            </DropdownMenuItem>
             <DropdownMenuItem destructive onSelect={onRemove}>
               <UserMinus /> {t("buddies.remove")}
             </DropdownMenuItem>

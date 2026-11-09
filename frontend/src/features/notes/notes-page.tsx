@@ -475,7 +475,7 @@ export function NotesPage() {
                     "-m-1 cursor-pointer rounded-md p-1 transition-colors hover:bg-muted",
                     n.pinned
                       ? "text-primary"
-                      : "text-muted-foreground opacity-0 focus-visible:opacity-100 group-hover:opacity-100",
+                      : "text-muted-foreground opacity-0 focus-visible:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100",
                   )}
                 >
                   <Pin className={cn("size-4", n.pinned && "fill-current")} />

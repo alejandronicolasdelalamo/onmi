@@ -26,12 +26,19 @@ export function DialogContent({
       <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/50 backdrop-blur-[2px] data-[state=open]:animate-[fade-up_0.15s_ease-out]" />
       <DialogPrimitive.Content
         className={cn(
-          "fixed left-1/2 top-1/2 z-50 max-h-[90dvh] w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-xl",
-          "border border-border bg-card p-6 shadow-xl focus:outline-none",
+          "fixed z-50 overflow-y-auto border border-border bg-card shadow-xl focus:outline-none",
+          // Móvil: hoja que sube desde abajo, con el pulgar a mano y sin tapar la zona segura de iOS.
+          "inset-x-0 bottom-0 max-h-[92dvh] w-full rounded-t-2xl p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] animate-[sheet-up_0.22s_ease-out]",
+          // Escritorio y tablet: diálogo centrado.
+          "sm:inset-x-auto sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:max-h-[90dvh] sm:w-[calc(100%-2rem)] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:animate-none sm:rounded-xl sm:p-6",
           wide ? "max-w-2xl" : "max-w-md",
           className,
         )}
       >
+        <div
+          className="mx-auto mb-3 h-1 w-10 rounded-full bg-border sm:hidden"
+          aria-hidden
+        />
         <div className="mb-4 space-y-1 pr-6">
           <DialogPrimitive.Title className="text-lg font-semibold tracking-tight">
             {title}
@@ -51,7 +58,7 @@ export function DialogContent({
           <Button
             variant="ghost"
             size="icon"
-            className="absolute right-3 top-3 size-8"
+            className="absolute right-3 top-3 size-8 pointer-coarse:size-10"
             aria-label={t("common.close")}
           >
             <X />

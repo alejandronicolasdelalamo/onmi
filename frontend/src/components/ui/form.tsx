@@ -10,7 +10,7 @@ import {
 import { cn } from "@/lib/utils";
 
 const fieldBase =
-  "w-full rounded-md border border-input bg-card px-3 text-sm shadow-xs transition-colors placeholder:text-muted-foreground " +
+  "w-full rounded-md border border-input bg-card px-3 text-sm pointer-coarse:text-base shadow-xs transition-colors placeholder:text-muted-foreground " +
   "focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-50 " +
   "aria-[invalid=true]:border-destructive";
 
@@ -18,7 +18,11 @@ export const Input = forwardRef<
   HTMLInputElement,
   InputHTMLAttributes<HTMLInputElement>
 >(({ className, ...props }, ref) => (
-  <input ref={ref} className={cn(fieldBase, "h-9", className)} {...props} />
+  <input
+    ref={ref}
+    className={cn(fieldBase, "h-9 pointer-coarse:h-11", className)}
+    {...props}
+  />
 ));
 Input.displayName = "Input";
 
@@ -40,7 +44,11 @@ export const NativeSelect = forwardRef<
 >(({ className, children, ...props }, ref) => (
   <select
     ref={ref}
-    className={cn(fieldBase, "h-9 cursor-pointer pr-8", className)}
+    className={cn(
+      fieldBase,
+      "h-9 cursor-pointer pr-8 pointer-coarse:h-11",
+      className,
+    )}
     {...props}
   >
     {children}

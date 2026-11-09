@@ -1,7 +1,15 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CalendarDays, Pencil, Plus, Target, Trash2 } from "lucide-react";
+import {
+  CalendarDays,
+  Lock,
+  Pencil,
+  Plus,
+  Target,
+  Trash2,
+  Users,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNewDialog } from "@/lib/use-new-dialog";
 import { toast } from "sonner";
@@ -24,6 +32,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Field, Input, NativeSelect, Textarea } from "@/components/ui/form";
+import { ShareToggle } from "@/components/ui/share-toggle";
 import { errorMessage } from "@/lib/errors";
 import {
   useCreateGoal,
@@ -57,13 +66,22 @@ function GoalDialog({
         description: z.string(),
         due_date: z.string(),
         project_id: z.string(),
+        shared: z.boolean(),
       }),
     [t],
   );
   const form = useForm({
     resolver: zodResolver(schema),
-    defaultValues: { title: "", description: "", due_date: "", project_id: "" },
+    defaultValues: {
+      title: "",
+      description: "",
+      due_date: "",
+      project_id: "",
+      shared: false,
+    },
   });
+
+  const shared = useWatch({ control: form.control, name: "shared" });
 
   useEffect(() => {
     if (open)
@@ -72,6 +90,7 @@ function GoalDialog({
         description: goal?.description ?? "",
         due_date: goal?.due_date ?? "",
         project_id: goal?.project_id ? String(goal.project_id) : "",
+        shared: goal?.shared ?? false,
       });
   }, [open, goal, form]);
 
@@ -81,6 +100,7 @@ function GoalDialog({
       description: v.description ?? "",
       due_date: v.due_date || null,
       project_id: v.project_id ? Number(v.project_id) : null,
+      shared: v.shared,
     };
     try {
       if (goal) await update.mutateAsync({ id: goal.id, ...body });
@@ -138,6 +158,12 @@ function GoalDialog({
               )}
             </Field>
           </div>
+          <ShareToggle
+            checked={shared}
+            onChange={(v) => form.setValue("shared", v)}
+            label={t("goals.share")}
+            hint={t("goals.shareHint")}
+          />
           <DialogFooter>
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               {t("common.cancel")}
@@ -193,6 +219,14 @@ function GoalRow({
         )}
         <div className="flex flex-wrap items-center gap-2">
           {project && <Badge tone="primary">{project}</Badge>}
+          <Badge tone={goal.shared ? "success" : "neutral"}>
+            {goal.shared ? (
+              <Users className="size-3" aria-hidden />
+            ) : (
+              <Lock className="size-3" aria-hidden />
+            )}
+            {goal.shared ? t("goals.sharedBadge") : t("goals.privateBadge")}
+          </Badge>
           {goal.due_date && (
             <span
               className={cn(
@@ -207,7 +241,7 @@ function GoalRow({
           )}
         </div>
       </div>
-      <div className="flex gap-0.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+      <div className="flex gap-0.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100">
         <Button
           variant="ghost"
           size="icon"

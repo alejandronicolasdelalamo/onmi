@@ -9,6 +9,7 @@ export interface User {
   email: string;
   role: Role;
   avatar: string | null;
+  bio: string;
   locale: "en" | "es";
   email_verified: boolean;
   is_demo: boolean;
@@ -54,6 +55,7 @@ export interface Goal {
   title: string;
   description: string;
   done: boolean;
+  shared: boolean;
   due_date: string | null;
   project_id: number | null;
   habit_ids: number[];
@@ -154,6 +156,8 @@ export interface Paginated<T> {
 export interface PublicConfig {
   google_client_id: string | null;
   demo_enabled: boolean;
+  /** false = el servidor no envía correos: se ocultan los avisos de verificación. */
+  mail_enabled: boolean;
 }
 
 export interface WeekWindow {
@@ -259,4 +263,69 @@ export interface BuddiesData {
   incoming: BuddyRelation[];
   outgoing: BuddyRelation[];
   cheers: BuddyCheer[];
+}
+
+export interface BuddyProfileGoal {
+  id: number;
+  title: string;
+  done: boolean;
+  due_date: string | null;
+  completed_at: string | null;
+}
+
+export interface BuddyProfile {
+  user: BuddyUser & { bio: string };
+  member_since: string;
+  goals: BuddyProfileGoal[];
+  habits: BuddyHabit[];
+  cheered_today: boolean;
+}
+
+export type Repeat = "none" | "daily" | "weekdays" | "weekly_count";
+
+export interface CalendarEventDef {
+  id: number;
+  title: string;
+  notes: string;
+  color: string;
+  start_date: string;
+  start_time: string | null;
+  duration_min: number | null;
+  repeat: Repeat;
+  /** 0 = lunes … 6 = domingo */
+  weekdays: number[];
+  per_week: number | null;
+  every_weeks: number;
+  until: string | null;
+  shared: boolean;
+}
+
+export interface Occurrence {
+  event_id: number;
+  day: string;
+  title: string;
+  color: string;
+  start_time: string | null;
+  duration_min: number | null;
+  done: boolean;
+  shared: boolean;
+  repeat: Repeat;
+  flexible: boolean;
+  per_week: number | null;
+  week_done?: number;
+  notes?: string;
+}
+
+export interface CalendarData {
+  events: CalendarEventDef[];
+  occurrences: Occurrence[];
+}
+
+export interface SharedCalendars {
+  people: { user: BuddyUser; occurrences: Occurrence[] }[];
+}
+
+export interface CalendarSharing {
+  buddies: { user: BuddyUser; shared: boolean }[];
+  shared_with_me: BuddyUser[];
 }

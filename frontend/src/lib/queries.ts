@@ -18,8 +18,13 @@ import type {
   MoodHistory,
   MoodKind,
   Note,
+  BuddyProfile,
+  CalendarData,
+  CalendarEventDef,
+  CalendarSharing,
   Paginated,
   PomodoroStats,
+  SharedCalendars,
   Project,
   ProjectStatus,
 } from "./types";
@@ -208,7 +213,10 @@ export const useGoals = () =>
   });
 
 export type GoalInput = Partial<
-  Pick<Goal, "title" | "description" | "due_date" | "project_id" | "done">
+  Pick<
+    Goal,
+    "title" | "description" | "due_date" | "project_id" | "done" | "shared"
+  >
 >;
 const goalKeys = [
   keys.goals,
@@ -409,4 +417,67 @@ export const useDeleteAdminUser = () =>
   useInvalidatingMutation(
     (id: number) => api.delete(`/api/admin/users/${id}`),
     [["admin"]],
+  );
+
+// ---- mini perfil de un compañero ---------------------------------------------------
+export const useBuddyProfile = (id: number) =>
+  useQuery({
+    queryKey: ["buddies", "profile", id],
+    queryFn: () => api.get<BuddyProfile>(`/api/buddies/${id}/profile`),
+    enabled: Number.isFinite(id),
+  });
+
+// ---- calendario ----------------------------------------------------------------------
+export type EventInput = Omit<CalendarEventDef, "id">;
+const calendarKey = ["calendar"] as const;
+
+export const useCalendar = (from: string, to: string) =>
+  useQuery({
+    queryKey: [...calendarKey, "mine", from, to],
+    queryFn: () => api.get<CalendarData>(`/api/calendar${qs({ from, to })}`),
+    placeholderData: keepPreviousData,
+  });
+
+export const useSharedCalendars = (from: string, to: string) =>
+  useQuery({
+    queryKey: [...calendarKey, "shared", from, to],
+    queryFn: () =>
+      api.get<SharedCalendars>(`/api/calendar/shared${qs({ from, to })}`),
+    placeholderData: keepPreviousData,
+  });
+
+export const useCalendarSharing = () =>
+  useQuery({
+    queryKey: [...calendarKey, "sharing"],
+    queryFn: () => api.get<CalendarSharing>("/api/calendar/sharing"),
+  });
+
+export const useCreateEvent = () =>
+  useInvalidatingMutation(
+    (b: EventInput) => api.post<CalendarEventDef>("/api/calendar/events", b),
+    [calendarKey],
+  );
+export const useUpdateEvent = () =>
+  useInvalidatingMutation(
+    ({ id, ...b }: Partial<EventInput> & { id: number }) =>
+      api.patch<CalendarEventDef>(`/api/calendar/events/${id}`, b),
+    [calendarKey],
+  );
+export const useDeleteEvent = () =>
+  useInvalidatingMutation(
+    (id: number) => api.delete(`/api/calendar/events/${id}`),
+    [calendarKey],
+  );
+export const useMarkDay = () =>
+  useInvalidatingMutation(
+    (v: { id: number; day: string; status: "done" | "skipped" | null }) =>
+      api.put(`/api/calendar/events/${v.id}/days/${v.day}`, {
+        status: v.status,
+      }),
+    [calendarKey],
+  );
+export const useSetCalendarSharing = () =>
+  useInvalidatingMutation(
+    (user_ids: number[]) => api.put("/api/calendar/sharing", { user_ids }),
+    [calendarKey],
   );

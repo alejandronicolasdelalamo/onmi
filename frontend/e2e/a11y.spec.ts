@@ -10,6 +10,7 @@ const APP_ROUTES = [
   "/",
   "/notes",
   "/habits",
+  "/calendar",
   "/projects",
   "/goals",
   "/mood",

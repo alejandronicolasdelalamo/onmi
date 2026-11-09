@@ -37,6 +37,8 @@ ONMi es una app de productividad personal. Reúne en una sola interfaz lo que no
 - **Insights**: conecta tus datos. Compara cada semana con la anterior (hábitos, enfoque, ánimo, metas) y detecta patrones, por ejemplo *«los días que corres, tu ánimo medio es 4,2 frente a 2,8»*. Es prudente: exige un mínimo de días en cada grupo, solo muestra efectos relevantes y lo presenta como patrón, no como causa.
 - **Coach semanal**: una revisión escrita de tu semana (qué fue bien, en qué fijarte y una sugerencia). Por defecto la redacta el servidor con plantillas, sin enviar nada fuera. Si el administrador configura una clave y **tú lo activas** en Ajustes, la escribe Claude a partir de datos agregados; si Claude falla, vuelve a la versión local sin errores.
 - **Compañeros de hábitos**: conecta con amigos mediante un código personal (se acepta la solicitud, y se puede regenerar). Cada hábito es **privado por defecto**; solo ves de un compañero los hábitos que él marcó como compartidos (nombre, racha y progreso), nunca sus notas, su ánimo ni su correo. Puedes animarle una vez al día, con aviso push opcional.
+- **Mini perfil**: tus compañeros ven tu nombre, una frase tuya y **solo los objetivos y hábitos que marques como compartidos**. Cada objetivo es privado por defecto, con una insignia que lo deja claro; la descripción nunca se comparte.
+- **Calendario**: vista de mes y de semana, colores, hora y duración. Los eventos se repiten **cada día, los días de la semana que elijas (solo martes, martes y jueves…), cada 1-4 semanas, o «N días por semana» a tu elección** (aparece cada día hasta que marcas N como hechos). Puedes saltar un día suelto y marcar los hechos. Se comparte **solo con las personas que elijas** y solo los eventos que marques como compartidos, sin notas; se ve junto al tuyo con un filtro por persona.
 - **Primeros pasos** para cuentas nuevas, calculados con los datos reales, y **celebración de rachas** (7, 30, 100 días…) con confeti que respeta `prefers-reduced-motion`.
 - **Exportar mis datos** en JSON desde Ajustes.
 - **App nativa** (iOS y Android) con Expo y React Native en [`mobile/`](mobile/README.md): Hoy, hábitos, notas y ajustes sobre la misma API, con sesión por tokens en el almacén seguro del sistema y modo claro/oscuro.
@@ -110,7 +112,7 @@ en modo claro y oscuro, y falla ante cualquier infracción grave o crítica. Esa
 reales, como etiquetas accesibles que no incluían el texto visible o un contraste insuficiente en las etiquetas de prioridad.
 
 - **Teclado y lectores de pantalla**: enlace de salto al contenido, foco que pasa al contenido principal al navegar, título de pestaña por pantalla y `<html lang>` sincronizado con el idioma. El Kanban se puede mover con teclado.
-- **Móvil**: objetivos táctiles de al menos 44 px en pantallas táctiles, navegación en cajón y estadísticas en dos columnas.
+- **Móvil (iPhone y Android, como web instalada)**: barra de pestañas inferior al alcance del pulgar, formularios como hoja que sube desde abajo, respeto de la zona segura (notch y barra de inicio), campos de 16 px para que iOS no haga zoom, objetivos táctiles de 44 px, acciones siempre visibles (sin depender del hover) y sin desplazamiento horizontal. Un test de Playwright con viewport de teléfono lo verifica en todas las pantallas (y ya cazó una fila de caras de ánimo que se salía de la pantalla).
 - **Estados completos**: esqueletos de carga, estados vacíos con una acción y errores de carga con botón de reintentar; un fallo de renderizado no deja la pantalla en blanco.
 - **Respuesta inmediata**: marcar un hábito se refleja al instante (actualización optimista con vuelta atrás si falla el servidor).
 - **Pequeños detalles**: fuente Inter autoalojada, fechas formateadas con `Intl` según el idioma, mostrar u ocultar contraseña, atajo `⌘K` o `Ctrl K` según el sistema, heatmap con etiquetas de día y mes, y confirmaciones que nombran lo que se va a borrar.
@@ -194,6 +196,14 @@ revisión se guarda por semana (no se regenera sin motivo) y regenerarla tiene u
   su fallo nunca rompe el ánimo. Dejar de ser compañeros borra los ánimos entre ambos, y borrar la cuenta limpia relaciones y ánimos.
 - La cuenta demo ve a un compañero de ejemplo (con un hábito privado que no se muestra) pero no tiene código ni puede cambiar nada.
 
+### Mini perfil y calendario compartido
+
+- Un compañero **aceptado** puede ver tu mini perfil (`GET /api/buddies/<id>/profile`); un desconocido recibe 404. La vista usa una lista blanca:
+  nombre, avatar, frase, y de cada objetivo solo `title`, `done` y `due_date`; nunca la descripción ni los objetivos privados.
+- El calendario se comparte con **personas concretas** (`PUT /api/calendar/sharing`, solo compañeros aceptados) y solo se ven los eventos marcados
+  como compartidos, sin notas. Si se rompe la amistad, deja de verse al instante. La cuenta demo no puede compartir.
+- Las repeticiones se expanden en el servidor (`services/calendar.py`) y los tests cubren cada modo, los saltos, la cuota semanal y la privacidad.
+
 ### Recordatorios de hábitos
 
 1. Genera las claves: `flask --app wsgi generate-vapid` y pon `VAPID_PUBLIC_KEY` y `VAPID_PRIVATE_KEY` en el entorno.
@@ -208,10 +218,10 @@ revisión se guarda por semana (no se regenera sin motivo) y regenerarla tiene u
 ## Tests
 
 ```bash
-cd backend  && pytest --cov=app          # 146 tests
-cd frontend && npm test                  # 61 tests (Vitest)
+cd backend  && pytest --cov=app          # 180 tests
+cd frontend && npm test                  # 68 tests (Vitest)
 cd mobile   && npm test                  # 26 tests (Jest) + `npm run export:android` para validar el bundle
-cd frontend && npx playwright install chromium && npm run e2e   # 39 tests de extremo a extremo (31 flujos + 8 de accesibilidad)
+cd frontend && npx playwright install chromium && npm run e2e   # tests de extremo a extremo: flujos, accesibilidad (axe) y móvil
 ```
 
 Los E2E arrancan solos una API con base de datos SQLite desechable y el servidor de Vite. Para regenerar las capturas de este
@@ -223,7 +233,7 @@ README: `SCREENSHOTS=1 npx playwright test screenshots`.
 onmi/
 ├── backend/
 │   ├── app/
-│   │   ├── api/          # blueprints: auth, notes, projects, goals, habits, wellbeing, dashboard, insights, coach, push, buddies, admin
+│   │   ├── api/          # blueprints: auth, notes, projects, goals, habits, wellbeing, dashboard, insights, coach, push, buddies, calendar, admin
 │   │   ├── services/     # stats (rachas), insights (correlaciones), mail (consola/SendGrid), seed
 │   │   ├── models.py     # SQLAlchemy 2
 │   │   ├── schemas.py    # validación Pydantic

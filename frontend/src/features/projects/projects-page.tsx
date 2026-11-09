@@ -156,7 +156,7 @@ function SortableCard({
         {...attributes}
         {...listeners}
         aria-label={`${project.name} – drag`}
-        className="absolute right-1 top-9 z-10 cursor-grab rounded p-1 text-muted-foreground opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100 active:cursor-grabbing"
+        className="absolute right-1 top-9 z-10 cursor-grab rounded p-1 text-muted-foreground opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100 active:cursor-grabbing"
       >
         <GripVertical className="size-4" />
       </button>

@@ -167,6 +167,8 @@ erDiagram
 | Temporizador por **hora de fin**, no restando 1 s por tick | Sigue siendo exacto con la pestaña en segundo plano. |
 | OpenAPI generado desde los esquemas Pydantic | La documentación en `/docs` no se desincroniza del código. |
 | Códigos de error estables (`error.code`) | El frontend traduce los mensajes por código; la API no depende del idioma. |
+| Calendario: eventos con `repeat` (`none`, `daily`, `weekdays`, `weekly_count`) y marcas por día (`EventLog`) | Un solo evento representa miles de ocurrencias sin guardarlas; la cuota «N días por semana» se calcula con las marcas de esa semana. |
+| Compartir calendario: `CalendarShare` por persona + `shared` por evento | Dos niveles de control: con quién y qué. Al romperse la amistad deja de verse porque la consulta exige amistad aceptada. |
 | Compañeros: `pair_key` único (`menor-mayor`) y vista por **lista blanca** | Una sola relación por pareja aunque se pidan a la vez, y un compañero nunca recibe campos privados por descuido al añadir columnas. |
 | Hábitos **privados por defecto** (`shared = false`) | Compartir es una decisión explícita, hábito a hábito. |
 | Un ánimo al día por pareja (`UNIQUE(from, to, day)`) | La regla vive en la base de datos, así que no se salta con peticiones concurrentes. |

@@ -12,6 +12,7 @@ const TITLES: Record<string, string> = {
   "/focus": "nav.focus",
   "/insights": "nav.insights",
   "/buddies": "nav.buddies",
+  "/calendar": "nav.calendar",
   "/settings": "nav.profile",
   "/admin": "nav.admin",
   "/login": "auth.signIn",
@@ -39,7 +40,10 @@ export function RouteEffects() {
   }, [i18n.language]);
 
   useEffect(() => {
-    const key = TITLES[pathname];
+    // /buddies/12 (mini perfil) comparte título con /buddies.
+    const key =
+      TITLES[pathname] ??
+      (pathname.startsWith("/buddies/") ? "nav.buddies" : undefined);
     // El pomodoro gestiona su propio título mientras corre.
     if (pathname !== "/focus")
       document.title = key
