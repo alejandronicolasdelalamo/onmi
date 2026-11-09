@@ -6,6 +6,7 @@ def register_blueprints(app: Flask) -> None:
         admin,
         auth,
         buddies,
+        calendar,
         coach,
         dashboard,
         goals,
@@ -32,5 +33,6 @@ def register_blueprints(app: Flask) -> None:
         buddies,
         admin,
         internal,
+        calendar,
     ):
         app.register_blueprint(module.bp)

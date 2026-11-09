@@ -62,6 +62,7 @@ class ProfileIn(Base):
     name: Name | None = None
     ai_coach_enabled: bool | None = None
     avatar: str | None = Field(default=None, max_length=32)
+    bio: str | None = Field(default=None, max_length=160)
     locale: LocaleLiteral | None = None
 
 
@@ -108,6 +109,7 @@ class GoalIn(Base):
     description: str = Field(default="", max_length=2000)
     due_date: date | None = None
     project_id: int | None = None
+    shared: bool = False
 
 
 class GoalUpdate(Base):
@@ -116,6 +118,7 @@ class GoalUpdate(Base):
     due_date: date | None = None
     project_id: int | None = None
     done: bool | None = None
+    shared: bool | None = None
 
 
 ReminderTime = Annotated[str, StringConstraints(pattern=r"^([01]\d|2[0-3]):[0-5]\d$")]
@@ -191,3 +194,64 @@ class BuddyRequestIn(Base):
 
 class CheerIn(Base):
     habit_id: int | None = None
+
+
+RepeatLiteral = Literal["none", "daily", "weekdays", "weekly_count"]
+HexColor = Annotated[str, StringConstraints(pattern=r"^#[0-9a-fA-F]{6}$")]
+
+
+class CalendarEventIn(Base):
+    title: str = Field(min_length=1, max_length=120)
+    notes: str = Field(default="", max_length=1000)
+    color: HexColor = "#6366f1"
+    start_date: date
+    start_time: ReminderTime | None = None  # None = todo el día
+    duration_min: int | None = Field(default=None, ge=1, le=1440)
+    repeat: RepeatLiteral = "none"
+    weekdays: list[int] = Field(default_factory=list, max_length=7)  # 0 = lunes … 6 = domingo
+    per_week: int | None = Field(default=None, ge=1, le=7)
+    every_weeks: int = Field(default=1, ge=1, le=4)
+    until: date | None = None
+    shared: bool = False
+
+    @field_validator("weekdays")
+    @classmethod
+    def _valid_weekdays(cls, v: list[int]) -> list[int]:
+        if any(d < 0 or d > 6 for d in v):
+            raise ValueError("weekdays must be between 0 (Monday) and 6 (Sunday)")
+        return sorted(set(v))
+
+    def check(self) -> "CalendarEventIn":
+        """Reglas que cruzan campos (se llama tras validar; también en PATCH con el evento ya fusionado)."""
+        if self.repeat == "weekdays" and not self.weekdays:
+            raise ValueError("Pick at least one weekday")
+        if self.repeat == "weekly_count" and self.per_week is None:
+            raise ValueError("per_week is required for weekly_count")
+        if self.until and self.until < self.start_date:
+            raise ValueError("until cannot be before start_date")
+        if self.duration_min and not self.start_time:
+            raise ValueError("duration_min needs start_time")
+        return self
+
+
+class CalendarEventUpdate(Base):
+    title: str | None = Field(default=None, min_length=1, max_length=120)
+    notes: str | None = Field(default=None, max_length=1000)
+    color: HexColor | None = None
+    start_date: date | None = None
+    start_time: ReminderTime | None = None
+    duration_min: int | None = Field(default=None, ge=1, le=1440)
+    repeat: RepeatLiteral | None = None
+    weekdays: list[int] | None = Field(default=None, max_length=7)
+    per_week: int | None = Field(default=None, ge=1, le=7)
+    every_weeks: int | None = Field(default=None, ge=1, le=4)
+    until: date | None = None
+    shared: bool | None = None
+
+
+class EventDayIn(Base):
+    status: Literal["done", "skipped"] | None = None
+
+
+class CalendarSharingIn(Base):
+    user_ids: list[int] = Field(max_length=100)

@@ -1,7 +1,7 @@
 """Compañeros de hábitos: códigos de invitación, vista segura de los hábitos compartidos y aviso de ánimo.
 
-Privacidad por diseño: un compañero ve únicamente el nombre y el avatar de la otra persona y, de sus hábitos, solo los
-que ella marcó como `shared` (nombre, color, racha y progreso). Nunca notas, ánimo, proyectos, metas ni el correo.
+Privacidad por diseño: un compañero ve únicamente el nombre, el avatar y la frase de la otra persona y, de sus
+hábitos y metas, solo los que ella marcó como `shared`. Nunca notas, ánimo, proyectos ni el correo.
 """
 
 from __future__ import annotations
@@ -61,6 +61,31 @@ def local_today(user: User, now: datetime | None = None) -> date:
 
 def public_user(user: User) -> dict:
     return {"id": user.id, "name": user.name, "avatar": user.avatar}
+
+
+def shared_goals_view(friend: User) -> list[dict]:
+    """Las metas que `friend` ha decidido compartir (título, estado y fecha; nunca la descripción)."""
+    goals = sorted((g for g in friend.goals if g.shared), key=lambda g: (g.done, g.due_date is None, g.due_date, g.id))
+    return [
+        {
+            "id": g.id,
+            "title": g.title,
+            "done": g.done,
+            "due_date": g.due_date.isoformat() if g.due_date else None,
+            "completed_at": g.completed_at.isoformat() if g.completed_at else None,
+        }
+        for g in goals
+    ]
+
+
+def profile_view(friend: User) -> dict:
+    """Mini perfil de un compañero: quién es, sus metas compartidas y sus hábitos compartidos."""
+    return {
+        "user": {**public_user(friend), "bio": friend.bio},
+        "member_since": friend.created_at.isoformat(),
+        "goals": shared_goals_view(friend),
+        "habits": shared_habits_view(friend),
+    }
 
 
 def shared_habits_view(friend: User, now: datetime | None = None) -> list[dict]:

@@ -69,6 +69,7 @@ def public_config():
         {
             "google_client_id": cfg["GOOGLE_CLIENT_ID"] or None,
             "demo_enabled": cfg["DEMO_ENABLED"],
+            "mail_enabled": bool(cfg["SENDGRID_API_KEY"]),
         }
     )
 

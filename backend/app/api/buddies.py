@@ -180,6 +180,23 @@ def remove(friendship_id):
     return jsonify({"ok": True})
 
 
+@bp.get("/<int:friend_id>/profile")
+@jwt_required()
+@doc(
+    "Mini perfil de un compañero",
+    "Buddies",
+    description="Nombre, frase, metas compartidas y hábitos compartidos. Solo entre compañeros aceptados.",
+)
+def profile(friend_id):
+    user = current_user()
+    friend = _accepted_friend(user, friend_id)
+    today = client_today()
+    cheered = bool(
+        db.session.scalar(db.select(Cheer.id).filter_by(from_user_id=user.id, to_user_id=friend.id, day=today))
+    )
+    return jsonify({**svc.profile_view(friend), "cheered_today": cheered})
+
+
 @bp.post("/<int:friend_id>/cheer")
 @jwt_required()
 @limiter.limit("60 per hour")

@@ -68,6 +68,8 @@ class User(db.Model):
     email_verified: Mapped[bool] = mapped_column(Boolean, default=False)
     google_id: Mapped[str | None] = mapped_column(String(64), unique=True)
     avatar: Mapped[str | None] = mapped_column(String(32))
+    # Frase corta que ven tus compañeros en tu mini perfil.
+    bio: Mapped[str] = mapped_column(String(160), default="", server_default="")
     locale: Mapped[str] = mapped_column(String(5), default="en")
     timezone: Mapped[str] = mapped_column(String(64), default="UTC", server_default="UTC")
     # Opt-in: el coach semanal se redacta con Claude (datos agregados). Desactivado = redactor local.
@@ -99,6 +101,13 @@ class User(db.Model):
     )
     cheers_sent: Mapped[list[Cheer]] = relationship(foreign_keys="Cheer.from_user_id", cascade="all, delete-orphan")
     cheers_received: Mapped[list[Cheer]] = relationship(foreign_keys="Cheer.to_user_id", cascade="all, delete-orphan")
+    calendar_events: Mapped[list[CalendarEvent]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    calendar_shares_given: Mapped[list[CalendarShare]] = relationship(
+        foreign_keys="CalendarShare.owner_id", cascade="all, delete-orphan"
+    )
+    calendar_shares_received: Mapped[list[CalendarShare]] = relationship(
+        foreign_keys="CalendarShare.viewer_id", cascade="all, delete-orphan"
+    )
 
     def set_password(self, password: str) -> None:
         self.password_hash = generate_password_hash(password)
@@ -117,6 +126,7 @@ class User(db.Model):
             "email": self.email,
             "role": self.role.value,
             "avatar": self.avatar,
+            "bio": self.bio,
             "locale": self.locale,
             "email_verified": self.email_verified,
             "is_demo": self.is_demo,
@@ -214,6 +224,8 @@ class Goal(db.Model):
     title: Mapped[str] = mapped_column(String(200))
     description: Mapped[str] = mapped_column(Text, default="")
     done: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Privado por defecto: solo lo ven tus compañeros en tu mini perfil si lo marcas.
+    shared: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
     due_date: Mapped[date | None] = mapped_column(Date)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
@@ -229,6 +241,7 @@ class Goal(db.Model):
             "title": self.title,
             "description": self.description,
             "done": self.done,
+            "shared": self.shared,
             "due_date": self.due_date.isoformat() if self.due_date else None,
             "project_id": self.project_id,
             "habit_ids": [h.id for h in self.habits],
@@ -451,4 +464,76 @@ class Cheer(db.Model):
     to_user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     habit_id: Mapped[int | None] = mapped_column(ForeignKey("habits.id", ondelete="SET NULL"))
     day: Mapped[date] = mapped_column(Date)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+
+
+class CalendarEvent(db.Model):
+    """Evento del calendario, único o repetido. Privado salvo que lo marques `shared` (y compartas el calendario)."""
+
+    __tablename__ = "calendar_events"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    title: Mapped[str] = mapped_column(String(120))
+    notes: Mapped[str] = mapped_column(String(1000), default="", server_default="")
+    color: Mapped[str] = mapped_column(String(7), default="#6366f1")
+    start_date: Mapped[date] = mapped_column(Date)
+    start_time: Mapped[str | None] = mapped_column(String(5))  # "HH:MM"; null = todo el día
+    duration_min: Mapped[int | None] = mapped_column(Integer)
+    # none | daily | weekdays (los días elegidos) | weekly_count (N días por semana, los que quieras)
+    repeat: Mapped[str] = mapped_column(String(12), default="none", server_default="none")
+    weekdays: Mapped[str] = mapped_column(String(13), default="", server_default="")  # "0,2,4" (lunes = 0)
+    per_week: Mapped[int | None] = mapped_column(Integer)
+    every_weeks: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
+    until: Mapped[date | None] = mapped_column(Date)
+    shared: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+
+    user: Mapped[User] = relationship(back_populates="calendar_events")
+    logs: Mapped[list[EventLog]] = relationship(back_populates="event", cascade="all, delete-orphan")
+
+    def weekday_list(self) -> list[int]:
+        return sorted({int(x) for x in self.weekdays.split(",") if x.strip().isdigit() and 0 <= int(x) <= 6})
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "title": self.title,
+            "notes": self.notes,
+            "color": self.color,
+            "start_date": self.start_date.isoformat(),
+            "start_time": self.start_time,
+            "duration_min": self.duration_min,
+            "repeat": self.repeat,
+            "weekdays": self.weekday_list(),
+            "per_week": self.per_week,
+            "every_weeks": self.every_weeks,
+            "until": self.until.isoformat() if self.until else None,
+            "shared": self.shared,
+        }
+
+
+class EventLog(db.Model):
+    """Marca de un día concreto de un evento: hecho o saltado (ese día no cuenta)."""
+
+    __tablename__ = "event_logs"
+    __table_args__ = (UniqueConstraint("event_id", "day", name="uq_event_log_day"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    event_id: Mapped[int] = mapped_column(ForeignKey("calendar_events.id", ondelete="CASCADE"), index=True)
+    day: Mapped[date] = mapped_column(Date)
+    status: Mapped[str] = mapped_column(String(8))  # done | skipped
+
+    event: Mapped[CalendarEvent] = relationship(back_populates="logs")
+
+
+class CalendarShare(db.Model):
+    """`owner` deja ver a `viewer` sus eventos marcados como compartidos."""
+
+    __tablename__ = "calendar_shares"
+    __table_args__ = (UniqueConstraint("owner_id", "viewer_id", name="uq_calendar_share"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    owner_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    viewer_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)

@@ -7,6 +7,8 @@ from datetime import datetime, time, timedelta
 
 from ..extensions import db
 from ..models import (
+    CalendarEvent,
+    CalendarShare,
     Cheer,
     Friendship,
     Goal,
@@ -132,9 +134,15 @@ def seed_demo_data(user: User, seed: int = 7) -> None:
             p.position = i
 
     goals = [
-        Goal(user_id=user.id, project_id=projects[0].id, title="Design the landing page", done=True),
+        Goal(user_id=user.id, project_id=projects[0].id, title="Design the landing page", done=True, shared=True),
         Goal(user_id=user.id, project_id=projects[0].id, title="Write case studies", due_date=t + timedelta(days=7)),
-        Goal(user_id=user.id, project_id=projects[0].id, title="Deploy to production", due_date=t + timedelta(days=14)),
+        Goal(
+            user_id=user.id,
+            project_id=projects[0].id,
+            title="Deploy to production",
+            due_date=t + timedelta(days=14),
+            shared=True,
+        ),
         Goal(
             user_id=user.id, project_id=projects[1].id, title="Complete the handbook", due_date=t + timedelta(days=20)
         ),
@@ -214,6 +222,7 @@ def _seed_buddy(user: User, demo_habits: dict[str, Habit], rng: random.Random, t
     sam = User(
         name="Sam Rivera",
         email="sam@demo.onmi.app",
+        bio="Reading more, running a bit further each week.",
         is_demo=True,
         email_verified=True,
         avatar="female",
@@ -240,11 +249,63 @@ def _seed_buddy(user: User, demo_habits: dict[str, Habit], rng: random.Random, t
             accepted_at=utcnow(),
         )
     )
+    _seed_calendar(user, sam, t)
     db.session.add(
         Cheer(
             from_user_id=sam.id, to_user_id=user.id, habit_id=demo_habits["Morning run"].id, day=t - timedelta(days=1)
         )
     )
+
+
+def _seed_calendar(user: User, sam: User, t) -> None:
+    """Calendario de ejemplo: un evento por cada tipo de repetición; Sam comparte el suyo con el demo."""
+    monday = t - timedelta(days=t.weekday())
+    mine = [
+        ("Deep work", "#6366f1", "09:00", 60, "daily", "", None, True),
+        ("Gym", "#f97316", "18:30", 75, "weekdays", "1,3", None, True),
+        ("Study Spanish", "#14b8a6", None, None, "weekly_count", "", 4, False),
+        ("Dentist", "#ef4444", "12:00", 45, "none", "", None, False),
+    ]
+    for title, color, start, minutes, repeat, days, per_week, shared in mine:
+        db.session.add(
+            CalendarEvent(
+                user_id=user.id,
+                title=title,
+                color=color,
+                start_date=t + timedelta(days=3) if repeat == "none" else monday - timedelta(days=14),
+                start_time=start,
+                duration_min=minutes,
+                repeat=repeat,
+                weekdays=days,
+                per_week=per_week,
+                shared=shared,
+            )
+        )
+    db.session.add(
+        CalendarEvent(
+            user_id=sam.id,
+            title="Long run",
+            color="#f97316",
+            start_date=monday - timedelta(days=14),
+            start_time="08:00",
+            duration_min=90,
+            repeat="weekdays",
+            weekdays="5",
+            shared=True,
+        )
+    )
+    db.session.add(
+        CalendarEvent(
+            user_id=sam.id,
+            title="Therapy",
+            color="#8b5cf6",
+            start_date=t,
+            start_time="17:00",
+            duration_min=50,
+            shared=False,
+        )
+    )
+    db.session.add(CalendarShare(owner_id=sam.id, viewer_id=user.id))
 
 
 def ensure_demo_user() -> User:

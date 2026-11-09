@@ -34,6 +34,7 @@ def create_goal():
         title=data.title,
         description=data.description,
         due_date=data.due_date,
+        shared=data.shared,
         project_id=check_ref(Project, data.project_id, user),
     )
     db.session.add(goal)
@@ -58,9 +59,11 @@ def update_goal(goal_id):
     fields = data.model_fields_set
     if "title" in fields and data.title is None:
         raise ApiError("Title cannot be null", 422, "validation_error")
+    if "shared" in fields and data.shared is None:
+        raise ApiError("shared cannot be null", 422, "validation_error")
     if "project_id" in fields:
         check_ref(Project, data.project_id, user)
-    apply_updates(goal, data, ("title", "description", "due_date", "project_id"))
+    apply_updates(goal, data, ("title", "description", "due_date", "project_id", "shared"))
     if data.done is not None and data.done != goal.done:
         goal.done = data.done
         goal.completed_at = utcnow() if data.done else None
