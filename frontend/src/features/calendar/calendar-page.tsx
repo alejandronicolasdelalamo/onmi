@@ -487,14 +487,24 @@ export function CalendarPage() {
                           onClick={() => setSelected(day)}
                           onDoubleClick={() => openNew(day)}
                           aria-pressed={isSelected}
-                          aria-label={`${new Intl.DateTimeFormat(lang, { weekday: "long", day: "numeric", month: "long" }).format(new Date(`${day}T00:00:00`))}${items.length ? `, ${t("calendar.eventCount", { count: items.length })}` : ""}`}
                           className={cn(
                             "flex min-h-14 flex-col items-center gap-1 bg-card p-1 text-sm transition-colors hover:bg-muted sm:min-h-24 sm:items-stretch",
                             !inMonth && "bg-muted text-muted-foreground",
                             isSelected && "bg-accent hover:bg-accent",
                           )}
                         >
+                          <span className="sr-only">
+                            {new Intl.DateTimeFormat(lang, {
+                              weekday: "long",
+                              day: "numeric",
+                              month: "long",
+                            }).format(new Date(`${day}T00:00:00`))}
+                            {items.length
+                              ? `, ${t("calendar.eventCount", { count: items.length })}`
+                              : ""}
+                          </span>
                           <span
+                            aria-hidden
                             className={cn(
                               "grid size-7 place-items-center self-center rounded-full text-xs font-medium sm:self-start",
                               isToday && "bg-primary text-primary-foreground",
@@ -528,14 +538,14 @@ export function CalendarPage() {
                               <span
                                 key={i}
                                 className={cn(
-                                  "truncate rounded px-1 text-left text-[11px] leading-4",
-                                  it.occ.done && "line-through opacity-60",
+                                  "truncate rounded px-1 text-left text-[11px] leading-4 text-foreground",
+                                  it.occ.done &&
+                                    "text-muted-foreground line-through",
                                 )}
                                 style={
                                   it.kind === "mine"
                                     ? {
                                         background: `${it.occ.color}26`,
-                                        color: "inherit",
                                         borderLeft: `3px solid ${it.occ.color}`,
                                       }
                                     : { border: `1px dashed ${it.occ.color}` }

@@ -212,11 +212,11 @@ test.describe("novedades", () => {
       page.getByRole("heading", { level: 1, name: "Insights" }),
     ).toBeVisible();
     await expect(page.getByText("This week", { exact: true })).toBeVisible();
-    await expect(page.getByText(/your mood averages/)).toContainText(
+    await expect(page.getByText(/your mood averages/).first()).toContainText(
       "Morning run",
     );
     await expect(
-      page.getByText(/A pattern in your data, not proof of cause/),
+      page.getByText(/A pattern in your data, not proof of cause/).first(),
     ).toBeVisible();
   });
 
