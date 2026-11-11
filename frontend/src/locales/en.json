@@ -290,16 +290,25 @@
     },
     "ios": {
       "title": "Silence every notification on iPhone",
-      "intro": "A web app can't turn on Do Not Disturb by itself, but your iPhone can do it for you whenever ONMi opens. Set it up once:",
+      "intro": "A web app can't turn on Do Not Disturb by itself, so create a Focus once and switch it on before each session:",
       "steps": [
         "Open Settings → Focus and tap the + button, then choose Custom and name it \"ONMi\".",
         "Under Allowed Notifications, leave People and Apps empty so nothing gets through.",
-        "Tap Set Schedule or Automation → Add Schedule → App, and choose ONMi.",
-        "Open ONMi: the Focus turns on by itself and turns off when you leave the app."
+        "Before each session, open Control Center, tap Focus and choose \"ONMi\".",
+        "When you finish, switch it off the same way."
       ],
-      "note": "Steps may vary slightly between iOS versions. This is an iPhone setting, ONMi can't check that it is on."
+      "note": "iOS doesn't list installed web apps (the ONMi home screen icon) when you automate a Focus by app, so it can't turn on by itself. Steps may vary slightly between iOS versions."
     },
-    "minutesShort": "{{count}} min"
+    "minutesShort": "{{count}} min",
+    "reminder": {
+      "title": "Turn on Do Not Disturb first",
+      "body": "ONMi can't silence your phone, but you can in a couple of taps.",
+      "how": "Open Control Center and turn on Do Not Disturb or your Focus (on Android, pull down the quick settings), then start your session.",
+      "dontAsk": "Don't remind me again",
+      "ready": "Done, start",
+      "without": "Start without it",
+      "setting": "Remind me to silence my phone"
+    }
   },
   "profile": {
     "title": "Settings",

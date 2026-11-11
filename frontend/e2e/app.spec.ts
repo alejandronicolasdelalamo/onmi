@@ -593,3 +593,39 @@ test.describe("compañeros", () => {
     await expect(page.getByText(/no personal code/i)).toBeVisible();
   });
 });
+
+test.describe("pomodoro en el iPhone", () => {
+  test.use({
+    userAgent:
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1",
+  });
+
+  test("avisa de activar No molestar antes de empezar y se puede no volver a ver", async ({
+    page,
+  }) => {
+    await register(page);
+    await page.goto("/focus");
+    await page.getByRole("button", { name: "Start" }).click();
+    const reminder = page.getByRole("dialog", {
+      name: "Turn on Do Not Disturb first",
+    });
+    await expect(reminder).toBeVisible();
+    // Todavía no ha empezado: ni bloqueo ni cuenta atrás.
+    await expect(page.getByRole("dialog", { name: "Focus mode" })).toBeHidden();
+    await reminder.getByLabel("Don't remind me again").check();
+    await reminder.getByRole("button", { name: "Done, start" }).click();
+    const lock = page.getByRole("dialog", { name: "Focus mode" });
+    await expect(lock).toBeVisible();
+
+    // Con «no volver a avisarme», la siguiente vez empieza directamente.
+    const exit = lock.getByRole("button", { name: "Hold to give up" });
+    await exit.hover();
+    await page.mouse.down();
+    await page.waitForTimeout(3300);
+    await page.mouse.up();
+    await expect(lock).toBeHidden();
+    await page.getByRole("button", { name: "Start" }).click();
+    await expect(reminder).toBeHidden();
+    await expect(lock).toBeVisible();
+  });
+});

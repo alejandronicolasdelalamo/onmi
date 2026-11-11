@@ -26,6 +26,7 @@ import {
   type PomodoroSettings,
 } from "./use-pomodoro";
 import { IosSilenceGuide, isIOS } from "./ios-silence-guide";
+import { isMobileDevice, SilenceReminder } from "./silence-reminder";
 import { enterFullscreen, exitFullscreen, FocusLock } from "./focus-lock";
 
 /** Las llamadas de inicio/fin del modo enfoque van en fila para que nunca lleguen desordenadas. */
@@ -87,6 +88,7 @@ export function PomodoroPage() {
   const { data: projects = [] } = useProjects();
   const { data: stats } = usePomodoroStats();
   const save = useSaveSession();
+  const [reminding, setReminding] = useState(false);
   const [interruptions, setInterruptions] = useState(0);
   const interruptionsRef = useRef(0);
 
@@ -155,7 +157,7 @@ export function PomodoroPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [locked]);
 
-  const start = () => {
+  const begin = () => {
     if (settings.lock && timer.mode === "work") {
       // Una sesión nueva empieza con el contador de salidas a cero; al reanudar se conserva.
       if (timer.remaining === timer.total) {
@@ -165,6 +167,21 @@ export function PomodoroPage() {
       enterFullscreen(); // necesita el gesto del usuario, por eso va aquí y no en un efecto
     }
     timer.start();
+  };
+
+  const start = () => {
+    // Solo antes de un enfoque nuevo con bloqueo, en móvil; al reanudar no se vuelve a preguntar.
+    if (
+      settings.lock &&
+      settings.silenceReminder &&
+      timer.mode === "work" &&
+      timer.remaining === timer.total &&
+      isMobileDevice()
+    ) {
+      setReminding(true);
+      return;
+    }
+    begin();
   };
 
   const abandon = () => {
@@ -421,6 +438,15 @@ export function PomodoroPage() {
                   onCheckedChange={(v) => update({ lock: v })}
                 />
               </label>
+              {isMobileDevice() && (
+                <label className="flex cursor-pointer items-center justify-between text-sm">
+                  {t("pomodoro.reminder.setting")}
+                  <Switch
+                    checked={settings.silenceReminder}
+                    onCheckedChange={(v) => update({ silenceReminder: v })}
+                  />
+                </label>
+              )}
               {isIOS() && <IosSilenceGuide />}
               {"Notification" in window && (
                 <label className="flex cursor-pointer items-center justify-between text-sm">
@@ -435,6 +461,15 @@ export function PomodoroPage() {
           </Card>
         </div>
       </div>
+      <SilenceReminder
+        open={reminding}
+        onOpenChange={setReminding}
+        onStart={(dontAsk) => {
+          if (dontAsk) update({ silenceReminder: false });
+          setReminding(false);
+          begin();
+        }}
+      />
       {locked && (
         <FocusLock
           remaining={formatDuration(timer.remaining)}

@@ -9,6 +9,8 @@ export interface PomodoroSettings {
   notifications: boolean;
   /** Bloquea ONMi a pantalla completa durante el enfoque y silencia sus avisos. */
   lock: boolean;
+  /** Avisa antes de empezar para que activen No molestar / su Concentración (solo en móvil). */
+  silenceReminder: boolean;
 }
 
 export const DEFAULT_SETTINGS: PomodoroSettings = {
@@ -17,6 +19,7 @@ export const DEFAULT_SETTINGS: PomodoroSettings = {
   sound: true,
   notifications: false,
   lock: true,
+  silenceReminder: true,
 };
 const KEY = "onmi-pomodoro";
 /** Sesión en marcha: sobrevive a recargar o cerrar la app (así el bloqueo no se salta recargando). */

@@ -290,16 +290,25 @@
     },
     "ios": {
       "title": "Silenciar todas las notificaciones en iPhone",
-      "intro": "Una web no puede activar No molestar por sí sola, pero tu iPhone puede hacerlo cada vez que abras ONMi. Se configura una sola vez:",
+      "intro": "Una web no puede activar No molestar por sí sola, así que crea una Concentración una vez y actívala antes de cada sesión:",
       "steps": [
         "Abre Ajustes → Concentración y pulsa el botón +; elige Personalizada y llámala «ONMi».",
         "En Notificaciones permitidas deja vacíos Personas y Apps para que no pase ninguna.",
-        "Pulsa Definir horario o automatización → Añadir horario → App y elige ONMi.",
-        "Abre ONMi: la Concentración se activa sola y se desactiva al salir de la app."
+        "Antes de cada sesión, abre el Centro de control, pulsa Concentración y elige «ONMi».",
+        "Al terminar, desactívala de la misma forma."
       ],
-      "note": "Los pasos pueden variar un poco según la versión de iOS. Es un ajuste del iPhone: ONMi no puede comprobar que esté activado."
+      "note": "iOS no muestra las webs instaladas (el icono de ONMi en la pantalla de inicio) al automatizar una Concentración por app, así que no puede activarse sola. Los pasos pueden variar un poco según la versión de iOS."
     },
-    "minutesShort": "{{count}} min"
+    "minutesShort": "{{count}} min",
+    "reminder": {
+      "title": "Activa antes No molestar",
+      "body": "ONMi no puede silenciar tu móvil, pero tú puedes hacerlo en un par de toques.",
+      "how": "Abre el Centro de control y activa No molestar o tu Concentración (en Android, despliega los ajustes rápidos) y después empieza la sesión.",
+      "dontAsk": "No volver a avisarme",
+      "ready": "Hecho, empezar",
+      "without": "Empezar sin activarlo",
+      "setting": "Recordarme silenciar el móvil"
+    }
   },
   "profile": {
     "title": "Ajustes",
