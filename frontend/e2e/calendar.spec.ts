@@ -35,6 +35,14 @@ test.describe("calendario", () => {
     await page.getByRole("button", { name: "New event" }).first().click();
     const dialog = page.getByRole("dialog");
     await dialog.getByLabel("Title").fill("Deep work");
+    // Empieza el lunes de esta semana: así martes y jueves caen siempre dentro de la vista, sea hoy el día que sea.
+    const monday = new Date();
+    monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
+    await dialog
+      .getByLabel("Date")
+      .fill(
+        `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, "0")}-${String(monday.getDate()).padStart(2, "0")}`,
+      );
     await dialog.getByLabel("Repeat", { exact: true }).selectOption("weekdays");
     await dialog.getByRole("button", { name: "Every day" }).click(); // atajo: todos
     for (const day of ["Monday", "Wednesday", "Friday", "Saturday", "Sunday"])
