@@ -213,6 +213,18 @@ def test_cheering_a_buddy_records_it_and_sends_a_push(client, other_client, user
     assert other_client.get("/api/buddies").get_json()["friends"][0]["cheered_today"] is True
 
 
+def test_cheer_push_is_skipped_during_focus_mode(client, other_client, user, pushed):
+    client.post(
+        "/api/push/subscribe",
+        json={"endpoint": "https://push.example/a", "keys": {"p256dh": "p" * 20, "auth": "a" * 10}},
+    )
+    connect(other_client, client)
+    client.put("/api/pomodoro/focus", json={"seconds": 600})
+    assert other_client.post(f"/api/buddies/{my_id(client)}/cheer", json={}).status_code == 201
+    assert pushed == []
+    assert len(client.get("/api/buddies").get_json()["cheers"]) == 1  # el ánimo sí queda guardado
+
+
 def test_only_one_cheer_per_day_per_buddy(client, other_client, user, pushed):
     connect(other_client, client)
     uid = my_id(client)

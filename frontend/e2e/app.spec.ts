@@ -131,12 +131,48 @@ test.describe("producto", () => {
     await page.goto("/focus");
     const timer = page.getByRole("timer");
     await expect(timer).toHaveText("25:00");
+    await page.getByRole("switch", { name: /Lock during focus/ }).click(); // sin bloqueo, para poder pausar
     await page.getByRole("button", { name: "Start" }).click();
     await expect(page.getByRole("button", { name: "Pause" })).toBeVisible();
     await expect(timer).not.toHaveText("25:00", { timeout: 5000 });
     await page.getByRole("button", { name: "Pause" }).click();
     await page.getByRole("button", { name: "Reset" }).click();
     await expect(timer).toHaveText("25:00");
+  });
+
+  test("pomodoro: el modo bloqueo tapa la app, vuelve al recargar y solo se sale manteniendo pulsado", async ({
+    page,
+  }) => {
+    await register(page);
+    await page.goto("/focus");
+    const focus = page.waitForRequest(
+      (r) => r.url().endsWith("/api/pomodoro/focus") && r.method() === "PUT",
+    );
+    await page.getByRole("button", { name: "Start" }).click();
+    await focus;
+    const lock = page.getByRole("dialog", { name: "Focus mode" });
+    await expect(lock).toBeVisible();
+    // Lo de debajo no se puede tocar.
+    await expect(page.locator("#root")).toHaveAttribute("inert", "");
+    await page.reload();
+    await expect(lock).toBeVisible();
+    // Abrir la app desde el inicio (como la PWA) también lleva al bloqueo.
+    await page.goto("/");
+    await expect(page).toHaveURL(/\/focus$/);
+    await expect(lock).toBeVisible();
+    const exit = lock.getByRole("button", { name: "Hold to give up" });
+    await exit.click(); // un toque no basta
+    await expect(lock).toBeVisible();
+    const ended = page.waitForRequest(
+      (r) => r.url().endsWith("/api/pomodoro/focus") && r.method() === "DELETE",
+    );
+    await exit.hover();
+    await page.mouse.down();
+    await page.waitForTimeout(3300);
+    await page.mouse.up();
+    await expect(lock).toBeHidden();
+    await ended;
+    await expect(page.getByRole("timer")).toHaveText("25:00");
   });
 
   test("ánimo: registrar cómo me siento hoy", async ({ page }) => {

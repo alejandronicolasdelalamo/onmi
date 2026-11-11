@@ -116,6 +116,8 @@ def shared_habits_view(friend: User, now: datetime | None = None) -> list[dict]:
 
 def notify_cheer(to_user: User, from_user: User, habit_name: str | None) -> None:
     """Notificación push al recibir ánimo. Es opcional: cualquier fallo se ignora (el ánimo ya está guardado)."""
+    if to_user.in_focus:  # el ánimo queda guardado y se ve en la app; solo se omite el aviso
+        return
     texts = CHEER_TEXTS.get(to_user.locale, CHEER_TEXTS["en"])
     body = (
         texts["habit"].format(name=from_user.name, habit=habit_name)

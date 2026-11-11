@@ -9,7 +9,7 @@ from flask_jwt_extended import jwt_required
 from ..extensions import db
 from ..models import MoodEntry, MoodKind, PomodoroSession, Project
 from ..openapi import doc
-from ..schemas import MoodIn, PomodoroIn
+from ..schemas import FocusIn, MoodIn, PomodoroIn
 from ..utils import ApiError, check_ref, current_user, parse_body, today, utcnow
 
 bp = Blueprint("wellbeing", __name__, url_prefix="/api")
@@ -74,6 +74,32 @@ def create_session():
     db.session.add(session)
     db.session.commit()
     return jsonify(session.to_dict()), 201
+
+
+@bp.put("/pomodoro/focus")
+@jwt_required()
+@doc(
+    "Start (or extend) focus mode",
+    "Pomodoro",
+    body=FocusIn,
+    description="Mientras dure, ONMi no envía notificaciones push (recordatorios ni ánimos).",
+)
+def start_focus():
+    user = current_user()
+    data = parse_body(FocusIn)
+    user.focus_until = utcnow() + timedelta(seconds=data.seconds)
+    db.session.commit()
+    return jsonify({"focus_until": user.focus_until.isoformat() + "Z"})
+
+
+@bp.delete("/pomodoro/focus")
+@jwt_required()
+@doc("End focus mode", "Pomodoro")
+def end_focus():
+    user = current_user()
+    user.focus_until = None
+    db.session.commit()
+    return jsonify({"focus_until": None})
 
 
 @bp.get("/pomodoro")

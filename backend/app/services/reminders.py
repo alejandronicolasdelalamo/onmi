@@ -70,6 +70,9 @@ def send_due_reminders(now: datetime | None = None, sender=push.send) -> dict:
         user = habit.user
         if not user.push_subscriptions:
             continue
+        # En modo enfoque no se molesta; al no marcarlo como avisado, llega al terminar (dentro de la ventana).
+        if user.focus_until and user.focus_until > now:
+            continue
         stats["checked"] += 1
         tz = user_zone(user)
         if not is_due(habit, now, tz):

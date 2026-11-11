@@ -1,5 +1,5 @@
 import { Pause, Play, RotateCcw, SkipForward } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Bar,
@@ -14,15 +14,25 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input, Label, NativeSelect } from "@/components/ui/form";
 import { Switch } from "@/components/ui/switch";
+import { api } from "@/lib/api";
 import { usePomodoroStats, useProjects, useSaveSession } from "@/lib/queries";
 import { cn, formatDuration } from "@/lib/utils";
 import {
   beep,
+  loadRun,
   loadSettings,
   saveSettings,
   usePomodoro,
   type PomodoroSettings,
 } from "./use-pomodoro";
+import { IosSilenceGuide, isIOS } from "./ios-silence-guide";
+import { enterFullscreen, exitFullscreen, FocusLock } from "./focus-lock";
+
+/** Las llamadas de inicio/fin del modo enfoque van en fila para que nunca lleguen desordenadas. */
+let focusQueue: Promise<unknown> = Promise.resolve();
+function syncFocus(call: () => Promise<unknown>) {
+  focusQueue = focusQueue.then(call).catch(() => {});
+}
 
 function Ring({
   progress,
@@ -77,6 +87,8 @@ export function PomodoroPage() {
   const { data: projects = [] } = useProjects();
   const { data: stats } = usePomodoroStats();
   const save = useSaveSession();
+  const [interruptions, setInterruptions] = useState(0);
+  const interruptionsRef = useRef(0);
 
   const timer = usePomodoro({
     settings,
@@ -89,7 +101,14 @@ export function PomodoroPage() {
       });
       const msg =
         mode === "work" ? t("pomodoro.workDone") : t("pomodoro.breakDone");
-      toast.success(msg);
+      exitFullscreen();
+      const outs = interruptionsRef.current;
+      toast.success(msg, {
+        description:
+          mode === "work" && settings.lock && outs
+            ? t("pomodoro.lock.interruptions", { count: outs })
+            : undefined,
+      });
       if (settings.sound) beep();
       if (
         settings.notifications &&
@@ -101,6 +120,65 @@ export function PomodoroPage() {
   });
 
   useEffect(() => saveSettings(settings), [settings]);
+
+  // Modo bloqueo: solo en los intervalos de enfoque (el descanso es para soltar el móvil... o usarlo).
+  const locked = settings.lock && timer.running && timer.mode === "work";
+
+  useEffect(() => {
+    if (!locked) return;
+    // El servidor deja de mandar notificaciones push hasta esa hora (con 1 min de margen).
+    const run = loadRun();
+    const left = run
+      ? Math.ceil((run.endAt - Date.now()) / 1000)
+      : settings.workMinutes * 60;
+    syncFocus(() =>
+      api.put("/api/pomodoro/focus", {
+        seconds: Math.min(125 * 60, Math.max(1, left + 60)),
+      }),
+    );
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") {
+        interruptionsRef.current += 1;
+        setInterruptions(interruptionsRef.current);
+      }
+    };
+    // Recargar o cerrar la pestaña pide confirmación (y si se recarga, el bloqueo vuelve igualmente).
+    const onBeforeUnload = (e: BeforeUnloadEvent) => e.preventDefault();
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("beforeunload", onBeforeUnload);
+      syncFocus(() => api.delete("/api/pomodoro/focus"));
+    };
+    // Solo al entrar o salir del bloqueo; los minutos no cambian con la sesión en marcha.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locked]);
+
+  const start = () => {
+    if (settings.lock && timer.mode === "work") {
+      // Una sesión nueva empieza con el contador de salidas a cero; al reanudar se conserva.
+      if (timer.remaining === timer.total) {
+        interruptionsRef.current = 0;
+        setInterruptions(0);
+      }
+      enterFullscreen(); // necesita el gesto del usuario, por eso va aquí y no en un efecto
+    }
+    timer.start();
+  };
+
+  const abandon = () => {
+    if (timer.elapsed >= 60)
+      save.mutate({
+        kind: "work",
+        duration_seconds: timer.elapsed,
+        completed: false,
+        project_id: projectId ? Number(projectId) : null,
+      });
+    timer.reset();
+    exitFullscreen();
+    toast(t("pomodoro.lock.abandoned"));
+  };
 
   // El tiempo restante en la pestaña del navegador.
   useEffect(() => {
@@ -177,7 +255,7 @@ export function PomodoroPage() {
               <Button
                 size="lg"
                 className="min-w-36"
-                onClick={timer.running ? timer.pause : timer.start}
+                onClick={timer.running ? timer.pause : start}
               >
                 {timer.running ? <Pause /> : <Play />}
                 {timer.running
@@ -330,6 +408,20 @@ export function PomodoroPage() {
                   onCheckedChange={(v) => update({ sound: v })}
                 />
               </label>
+              <label className="flex cursor-pointer items-start justify-between gap-4 text-sm">
+                <span>
+                  {t("pomodoro.lock.setting")}
+                  <span className="mt-0.5 block text-xs text-muted-foreground">
+                    {t("pomodoro.lock.settingHint")}
+                  </span>
+                </span>
+                <Switch
+                  checked={settings.lock}
+                  disabled={timer.running}
+                  onCheckedChange={(v) => update({ lock: v })}
+                />
+              </label>
+              {isIOS() && <IosSilenceGuide />}
               {"Notification" in window && (
                 <label className="flex cursor-pointer items-center justify-between text-sm">
                   {t("pomodoro.notifications")}
@@ -343,6 +435,15 @@ export function PomodoroPage() {
           </Card>
         </div>
       </div>
+      {locked && (
+        <FocusLock
+          remaining={formatDuration(timer.remaining)}
+          progress={progress}
+          project={projects.find((p) => String(p.id) === projectId)?.name}
+          interruptions={interruptions}
+          onAbandon={abandon}
+        />
+      )}
     </Page>
   );
 }

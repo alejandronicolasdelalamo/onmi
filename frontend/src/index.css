@@ -192,3 +192,8 @@
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
 }
+
+/* Modo enfoque del pomodoro: mientras está la pantalla de bloqueo no se muestran avisos de la app. */
+body[data-focus-lock="on"] [data-sonner-toaster] {
+  display: none !important;
+}

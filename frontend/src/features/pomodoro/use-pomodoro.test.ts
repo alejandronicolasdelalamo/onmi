@@ -2,13 +2,17 @@ import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   DEFAULT_SETTINGS,
+  loadRun,
   loadSettings,
   saveSettings,
   usePomodoro,
 } from "./use-pomodoro";
 
 describe("usePomodoro", () => {
-  beforeEach(() => vi.useFakeTimers());
+  beforeEach(() => {
+    localStorage.clear();
+    vi.useFakeTimers();
+  });
   afterEach(() => vi.useRealTimers());
 
   const setup = (
@@ -68,6 +72,60 @@ describe("usePomodoro", () => {
     act(() => result.current.skip());
     expect(result.current.mode).toBe("break");
     expect(onComplete).not.toHaveBeenCalled(); // saltar no cuenta como sesión completada
+  });
+});
+
+describe("sesión en marcha guardada", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    vi.useFakeTimers();
+  });
+  afterEach(() => vi.useRealTimers());
+  const settings = { ...DEFAULT_SETTINGS, workMinutes: 1, breakMinutes: 1 };
+
+  it("al volver a abrir la app retoma la sesión (y con ella el bloqueo)", () => {
+    const first = renderHook(() =>
+      usePomodoro({ settings, onComplete: vi.fn() }),
+    );
+    act(() => first.result.current.start());
+    act(() => void vi.advanceTimersByTime(20_000));
+    expect(loadRun()?.mode).toBe("work");
+    first.unmount();
+
+    const onComplete = vi.fn();
+    const again = renderHook(() => usePomodoro({ settings, onComplete }));
+    expect(again.result.current).toMatchObject({
+      running: true,
+      mode: "work",
+      remaining: 40,
+      elapsed: 20,
+    });
+    act(() => void vi.advanceTimersByTime(41_000));
+    expect(onComplete).toHaveBeenCalledWith({ mode: "work", seconds: 60 });
+    expect(loadRun()).toBeNull();
+  });
+
+  it("si terminó con la app cerrada, cuenta como completada al abrir", () => {
+    localStorage.setItem(
+      "onmi-pomodoro-run",
+      JSON.stringify({ mode: "work", endAt: Date.now() - 5_000 }),
+    );
+    const onComplete = vi.fn();
+    const { result } = renderHook(() => usePomodoro({ settings, onComplete }));
+    expect(onComplete).toHaveBeenCalledTimes(1);
+    expect(result.current).toMatchObject({ running: false, mode: "break" });
+  });
+
+  it("pausar o reiniciar borra la sesión guardada", () => {
+    const { result } = renderHook(() =>
+      usePomodoro({ settings, onComplete: vi.fn() }),
+    );
+    act(() => result.current.start());
+    act(() => result.current.pause());
+    expect(loadRun()).toBeNull();
+    act(() => result.current.start());
+    act(() => result.current.reset());
+    expect(loadRun()).toBeNull();
   });
 });
 

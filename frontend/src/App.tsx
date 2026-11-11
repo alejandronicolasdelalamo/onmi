@@ -1,6 +1,13 @@
 import { lazy, Suspense, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { BrowserRouter, Link, Navigate, Route, Routes } from "react-router-dom";
+import {
+  BrowserRouter,
+  Link,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+} from "react-router-dom";
 import { AppShell } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/card";
@@ -15,6 +22,7 @@ import {
 } from "@/features/auth/pages";
 
 import { RouteEffects } from "@/components/route-effects";
+import { loadRun, loadSettings } from "@/features/pomodoro/use-pomodoro";
 // Las vistas pesadas (gráficas, drag & drop, markdown) se cargan bajo demanda.
 const HabitsPage = lazy(() =>
   import("@/features/habits/habits-page").then((m) => ({
@@ -81,10 +89,25 @@ function FullScreenLoader() {
   );
 }
 
+/** ¿Hay una sesión de enfoque bloqueada sin terminar? (p. ej. al volver a abrir la PWA desde la pantalla de inicio) */
+function lockedFocusPending() {
+  const run = loadRun();
+  return (
+    run !== null &&
+    run.mode === "work" &&
+    run.endAt > Date.now() &&
+    loadSettings().lock
+  );
+}
+
 function RequireAuth({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
+  const { pathname } = useLocation();
   if (loading) return <FullScreenLoader />;
-  return user ? children : <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/login" replace />;
+  if (pathname !== "/focus" && lockedFocusPending())
+    return <Navigate to="/focus" replace />;
+  return children;
 }
 
 function RequireAdmin({ children }: { children: ReactNode }) {

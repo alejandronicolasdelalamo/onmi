@@ -277,6 +277,28 @@
     "workDone": "Focus session complete. Time for a break!",
     "breakDone": "Break is over. Ready to focus?",
     "last14": "Last 14 days",
+    "lock": {
+      "title": "Focus mode",
+      "hint": "ONMi is locked and silent until the session ends. Put your phone down and focus.",
+      "interruptions_one": "You left {{count}} time",
+      "interruptions_other": "You left {{count}} times",
+      "interruptions_zero": "No interruptions, nice!",
+      "abandon": "Hold to give up",
+      "abandoned": "Session abandoned",
+      "setting": "Lock during focus",
+      "settingHint": "ONMi lock screen until the session ends, with no ONMi notifications."
+    },
+    "ios": {
+      "title": "Silence every notification on iPhone",
+      "intro": "A web app can't turn on Do Not Disturb by itself, but your iPhone can do it for you whenever ONMi opens. Set it up once:",
+      "steps": [
+        "Open Settings → Focus and tap the + button, then choose Custom and name it \"ONMi\".",
+        "Under Allowed Notifications, leave People and Apps empty so nothing gets through.",
+        "Tap Set Schedule or Automation → Add Schedule → App, and choose ONMi.",
+        "Open ONMi: the Focus turns on by itself and turns off when you leave the app."
+      ],
+      "note": "Steps may vary slightly between iOS versions. This is an iPhone setting, ONMi can't check that it is on."
+    },
     "minutesShort": "{{count}} min"
   },
   "profile": {

@@ -79,6 +79,8 @@ class User(db.Model):
     is_demo: Mapped[bool] = mapped_column(Boolean, default=False)
     failed_logins: Mapped[int] = mapped_column(Integer, default=0)
     locked_until: Mapped[datetime | None] = mapped_column(DateTime)
+    # Modo enfoque del pomodoro: hasta esta hora (UTC) ONMi no envía notificaciones push.
+    focus_until: Mapped[datetime | None] = mapped_column(DateTime)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime)
 
@@ -119,6 +121,10 @@ class User(db.Model):
     def is_locked(self) -> bool:
         return bool(self.locked_until and self.locked_until > _now())
 
+    @property
+    def in_focus(self) -> bool:
+        return bool(self.focus_until and self.focus_until > _now())
+
     def to_dict(self) -> dict:
         return {
             "id": self.id,
@@ -131,6 +137,7 @@ class User(db.Model):
             "email_verified": self.email_verified,
             "is_demo": self.is_demo,
             "ai_coach_enabled": self.ai_coach_enabled,
+            "focus_until": self.focus_until.isoformat() + "Z" if self.in_focus else None,
             "has_password": bool(self.password_hash),
             "created_at": self.created_at.isoformat(),
         }

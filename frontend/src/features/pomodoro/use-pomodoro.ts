@@ -7,6 +7,8 @@ export interface PomodoroSettings {
   breakMinutes: number;
   sound: boolean;
   notifications: boolean;
+  /** Bloquea ONMi a pantalla completa durante el enfoque y silencia sus avisos. */
+  lock: boolean;
 }
 
 export const DEFAULT_SETTINGS: PomodoroSettings = {
@@ -14,8 +16,38 @@ export const DEFAULT_SETTINGS: PomodoroSettings = {
   breakMinutes: 5,
   sound: true,
   notifications: false,
+  lock: true,
 };
 const KEY = "onmi-pomodoro";
+/** Sesión en marcha: sobrevive a recargar o cerrar la app (así el bloqueo no se salta recargando). */
+const RUN_KEY = "onmi-pomodoro-run";
+
+interface RunState {
+  mode: Mode;
+  endAt: number;
+}
+
+export function loadRun(): RunState | null {
+  try {
+    const raw = localStorage.getItem(RUN_KEY);
+    if (!raw) return null;
+    const r = JSON.parse(raw) as RunState;
+    if ((r.mode !== "work" && r.mode !== "break") || !Number.isFinite(r.endAt))
+      return null;
+    return r;
+  } catch {
+    return null;
+  }
+}
+
+function saveRun(r: RunState | null) {
+  try {
+    if (r) localStorage.setItem(RUN_KEY, JSON.stringify(r));
+    else localStorage.removeItem(RUN_KEY);
+  } catch {
+    /* sin almacenamiento */
+  }
+}
 
 export function loadSettings(): PomodoroSettings {
   try {
@@ -89,11 +121,15 @@ export function usePomodoro({ settings, onComplete }: Options) {
       (m === "work" ? settings.workMinutes : settings.breakMinutes) * 60,
     [settings.workMinutes, settings.breakMinutes],
   );
-  const [mode, setMode] = useState<Mode>("work");
+  // Si había una sesión guardada se retoma tal cual (también si ya terminó mientras la app estaba cerrada).
+  const [initial] = useState(loadRun);
+  const [mode, setMode] = useState<Mode>(initial?.mode ?? "work");
   const [paused, setPaused] = useState<number | null>(null);
-  const [tick, setTick] = useState(0);
-  const [running, setRunning] = useState(false);
-  const endAt = useRef<number | null>(null);
+  const [tick, setTick] = useState(() =>
+    initial ? Math.max(0, Math.round((initial.endAt - Date.now()) / 1000)) : 0,
+  );
+  const [running, setRunning] = useState(initial !== null);
+  const endAt = useRef<number | null>(initial?.endAt ?? null);
   const onCompleteRef = useRef(onComplete);
 
   useEffect(() => {
@@ -104,6 +140,7 @@ export function usePomodoro({ settings, onComplete }: Options) {
 
   const finish = useCallback(() => {
     endAt.current = null;
+    saveRun(null);
     setRunning(false);
     setPaused(null);
     onCompleteRef.current({ mode, seconds: total(mode) });
@@ -119,6 +156,7 @@ export function usePomodoro({ settings, onComplete }: Options) {
       setTick(left);
       if (left <= 0) finish();
     };
+    update();
     const id = setInterval(update, 250);
     document.addEventListener("visibilitychange", update);
     return () => {
@@ -130,6 +168,7 @@ export function usePomodoro({ settings, onComplete }: Options) {
   const start = useCallback(() => {
     const secs = paused ?? total(mode);
     endAt.current = Date.now() + secs * 1000;
+    saveRun({ mode, endAt: endAt.current });
     setTick(secs);
     setRunning(true);
   }, [paused, total, mode]);
@@ -138,25 +177,32 @@ export function usePomodoro({ settings, onComplete }: Options) {
     if (endAt.current)
       setPaused(Math.max(0, Math.round((endAt.current - Date.now()) / 1000)));
     endAt.current = null;
+    saveRun(null);
     setRunning(false);
   }, []);
 
   const reset = useCallback(() => {
     endAt.current = null;
+    saveRun(null);
     setRunning(false);
     setPaused(null);
   }, []);
 
   const skip = useCallback(() => {
     endAt.current = null;
+    saveRun(null);
     setRunning(false);
     setPaused(null);
     setMode((m) => (m === "work" ? "break" : "work"));
   }, []);
 
+  /** Segundos ya trabajados del intervalo actual (para guardar una sesión abandonada). */
+  const elapsed = total(mode) - remaining;
+
   return {
     mode,
     remaining,
+    elapsed,
     running,
     total: total(mode),
     start,

@@ -164,6 +164,11 @@ class PomodoroIn(Base):
     project_id: int | None = None
 
 
+class FocusIn(Base):
+    # Lo que queda de la sesión de enfoque; con margen sobre el máximo de 120 min.
+    seconds: int = Field(ge=1, le=125 * 60)
+
+
 class AdminUserUpdate(Base):
     role: Literal["user", "admin"] | None = None
     is_active: bool | None = None

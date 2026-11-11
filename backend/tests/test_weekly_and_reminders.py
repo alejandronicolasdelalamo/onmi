@@ -252,3 +252,25 @@ def test_push_test_endpoint(client, user, app, monkeypatch):
 def test_push_send_is_noop_without_keys(app):
     app.config["VAPID_PRIVATE_KEY"] = ""
     assert push.send({"endpoint": "https://x.example", "keys": {}}, {"title": "t"}) is False
+
+
+# ---- modo enfoque -------------------------------------------------------------------------------
+def test_focus_mode_endpoints(client, user):
+    assert client.get("/api/auth/me").get_json()["user"]["focus_until"] is None
+    r = client.put("/api/pomodoro/focus", json={"seconds": 1500})
+    assert r.status_code == 200 and r.get_json()["focus_until"].endswith("Z")
+    assert client.get("/api/auth/me").get_json()["user"]["focus_until"] is not None
+    for bad in (0, 125 * 60 + 1):
+        assert client.put("/api/pomodoro/focus", json={"seconds": bad}).status_code == 422
+    assert client.delete("/api/pomodoro/focus").get_json() == {"focus_until": None}
+    assert client.get("/api/auth/me").get_json()["user"]["focus_until"] is None
+
+
+def test_reminder_waits_until_focus_mode_ends(setup_reminder):
+    u, habit = setup_reminder
+    u.focus_until = NOW + timedelta(minutes=20)
+    db.session.commit()
+    sender = Sender()
+    assert reminders.send_due_reminders(NOW, sender)["sent"] == 0 and sender.calls == []
+    assert habit.last_reminded_on is None
+    assert reminders.send_due_reminders(NOW + timedelta(minutes=25), sender)["sent"] == 1
