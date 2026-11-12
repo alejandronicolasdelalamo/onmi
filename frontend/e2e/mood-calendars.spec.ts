@@ -218,13 +218,27 @@ test.describe("compartir calendarios entre personas", () => {
       ).toBeVisible();
     }
 
-    // Bob ve los dos calendarios; Carol, solo «Familia». Ninguno ve las notas ni lo privado.
+    // Bob ve los dos calendarios (el botón dice «Compartidos conmigo» y deja elegir); Carol, uno solo.
     await bob!.goto("/calendar");
     await bob!.getByRole("button", { name: /Shared with me/ }).click();
+    await bob!.keyboard.press("Escape");
     await expect(bob!.getByText("Plan Familia").first()).toBeVisible();
     await expect(bob!.getByText("Plan Trabajo").first()).toBeVisible();
+
+    // Elegir cuántos ver a la vez: quitar «Trabajo» deja solo «Familia»; «Ver todos» los devuelve.
+    await bob!.getByRole("button", { name: /Shared with me/ }).click();
+    await bob!.getByRole("menuitemcheckbox", { name: /Trabajo/ }).click();
+    await bob!.getByRole("menuitemcheckbox", { name: /Familia/ }).waitFor();
+    await bob!.keyboard.press("Escape");
+    await expect(bob!.getByText("Plan Trabajo")).toHaveCount(0);
+    await expect(bob!.getByText("Plan Familia").first()).toBeVisible();
+    await bob!.getByRole("button", { name: /Shared with me/ }).click();
+    await bob!.getByRole("menuitem", { name: "Show all" }).click();
+    await bob!.keyboard.press("Escape");
+    await expect(bob!.getByText("Plan Trabajo").first()).toBeVisible();
+
     await carol!.goto("/calendar");
-    await carol!.getByRole("button", { name: /Shared with me/ }).click();
+    await carol!.getByRole("button", { name: /Owner Test · Familia/ }).click();
     await expect(carol!.getByText("Plan Familia").first()).toBeVisible();
     await expect(carol!.getByText("Plan Trabajo")).toHaveCount(0);
 

@@ -157,7 +157,8 @@ test.describe("calendario: editar lo que se acaba de crear", () => {
     dialog = await openEdit(page, "Reunión");
     await dialog.getByLabel("Date").fill("2026-11-20");
     await save(page);
-    await page.getByRole("button", { name: /^Today$/ }).click();
+    await page.getByRole("button", { name: "Calendar settings" }).click();
+    await page.getByRole("menuitem", { name: "Go to today" }).click();
     // Ya no está en el día de hoy...
     await expect(
       page.getByRole("button", { name: "Edit: Reunión" }),
@@ -224,7 +225,8 @@ test("en la vista de semana también se puede editar un evento recién creado", 
   const dialog = await openNew(page);
   await dialog.getByLabel("Title").fill("Yoga");
   await save(page);
-  await page.getByRole("button", { name: "Week", exact: true }).click();
+  await page.getByRole("button", { name: "Calendar settings" }).click();
+  await page.getByRole("menuitemradio", { name: "Week" }).click();
   const edit = await openEdit(page, "Yoga");
   await edit.getByLabel("Title").fill("Yoga suave");
   await save(page);

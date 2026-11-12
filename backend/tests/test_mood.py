@@ -1,8 +1,8 @@
-from datetime import date, timedelta
+from datetime import datetime, timedelta, timezone
 
 from .conftest import register
 
-TODAY = date.today()
+TODAY = datetime.now(timezone.utc).date()  # el servidor cuenta los días en UTC
 
 
 def day(n: int) -> str:

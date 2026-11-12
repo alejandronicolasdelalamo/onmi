@@ -57,7 +57,8 @@ test.describe("calendario", () => {
     await expect(dialog).toBeHidden();
 
     // En la vista de semana aparece exactamente dos días.
-    await page.getByRole("button", { name: "Week", exact: true }).click();
+    await page.getByRole("button", { name: "Calendar settings" }).click();
+    await page.getByRole("menuitemradio", { name: "Week" }).click();
     await expect(page.getByText("Deep work", { exact: true })).toHaveCount(2);
 
     // 4 días por semana, los que quiera: muestra el progreso 0/4.
@@ -95,7 +96,8 @@ test.describe("calendario", () => {
   }) => {
     await demo(page);
     await page.goto("/calendar");
-    await page.getByRole("button", { name: /Shared with me/ }).click();
+    // Con un solo calendario compartido, el botón lleva su nombre.
+    await page.getByRole("button", { name: /Sam Rivera · / }).click();
     await expect(page.getByText(/Sam Rivera/).first()).toBeVisible();
   });
 });

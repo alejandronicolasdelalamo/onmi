@@ -1,6 +1,6 @@
 """Calendarios con nombre: el Personal es privado y cada calendario se comparte con las personas que elijas."""
 
-from datetime import date, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import sqlalchemy as sa
@@ -202,7 +202,7 @@ def test_an_old_demo_without_calendars_gets_them_back_once(app):
 
 # ---- datos privados de ONMi sobre el calendario ---------------------------------------------------------------
 def test_activity_layers_show_my_habits_goals_projects_mood_and_focus(client, other_client, user):
-    today = date.today()
+    today = datetime.now(timezone.utc).date()  # el servidor cuenta los días en UTC
     h = client.post("/api/habits", json={"name": "Leer"}).get_json()
     client.post(f"/api/habits/{h['id']}/toggle", json={"date": today.isoformat()})
     client.post("/api/goals", json={"title": "Entregar", "due_date": today.isoformat()})
@@ -270,3 +270,73 @@ def test_migration_moves_old_shared_events_to_a_shared_calendar(tmp_path, monkey
             )
         ).all()
         assert [r[0] for r in viewers] == [2]
+
+
+# ---- un solo Personal por usuario ------------------------------------------------------------------------
+def test_database_refuses_a_second_personal_calendar(client, user):
+    import pytest
+    from sqlalchemy.exc import IntegrityError
+
+    client.get("/api/calendar/calendars")
+    uid = my_id(client)
+    with pytest.raises(IntegrityError):
+        db.session.add(Calendar(user_id=uid, name="Otro", is_default=True))
+        db.session.commit()
+    db.session.rollback()
+    # Los calendarios normales no tienen límite por esa regla.
+    db.session.add(Calendar(user_id=uid, name="Normal", is_default=False))
+    db.session.commit()
+
+
+def test_a_lost_race_creating_personal_falls_back_to_the_existing_one(app, client, user):
+    """Si otra petición se adelanta y crea el Personal, se usa ese en vez de fallar o duplicar."""
+    from app.models import User
+    from app.services import calendars as cals
+
+    uid = my_id(client)
+    first = cals.ensure_personal(db.session.get(User, uid))
+    db.session.commit()
+    again = cals.ensure_personal(db.session.get(User, uid))
+    assert again.id == first.id
+    assert db.session.scalar(db.select(db.func.count(Calendar.id)).filter_by(user_id=uid, is_default=True)) == 1
+
+
+def test_migration_merges_duplicate_personal_calendars(tmp_path, monkeypatch):
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{(tmp_path / 'mig.db').as_posix()}")
+    app = create_app("development")
+    with app.app_context():
+        upgrade(directory=MIGRATIONS, revision="g8b9c0d1e2f3")
+        conn = db.engine.connect()
+        now = "2026-03-01 00:00:00"
+        conn.execute(
+            sa.text(
+                "INSERT INTO users (id, name, email, role, is_active, email_verified, is_demo, failed_logins, locale, "
+                "timezone, ai_coach_enabled, bio, created_at) "
+                "VALUES (1, 'Ana', 'a@x.io', 'USER', 1, 1, 0, 0, 'en', 'UTC', 0, '', :now)"
+            ),
+            {"now": now},
+        )
+        for cid in (10, 11):
+            conn.execute(
+                sa.text(
+                    "INSERT INTO calendars (id, user_id, name, color, is_default, created_at) "
+                    "VALUES (:c, 1, 'Personal', '#6366f1', 1, :now)"
+                ),
+                {"c": cid, "now": now},
+            )
+            conn.execute(
+                sa.text(
+                    "INSERT INTO calendar_events (user_id, title, notes, color, start_date, repeat, weekdays, "
+                    "every_weeks, shared, calendar_id, created_at) "
+                    "VALUES (1, :t, '', '#6366f1', '2026-03-02', 'none', '', 1, 0, :c, :now)"
+                ),
+                {"t": f"Evento {cid}", "c": cid, "now": now},
+            )
+        conn.commit()
+        conn.close()
+
+        upgrade(directory=MIGRATIONS)
+        cals_left = db.session.execute(sa.text("SELECT id FROM calendars")).all()
+        assert [r[0] for r in cals_left] == [10]
+        events = db.session.execute(sa.text("SELECT title, calendar_id FROM calendar_events ORDER BY title")).all()
+        assert [tuple(r) for r in events] == [("Evento 10", 10), ("Evento 11", 10)]

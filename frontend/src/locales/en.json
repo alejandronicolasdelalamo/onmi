@@ -836,7 +836,12 @@
     "layerHabits_other": "{{count}} habits done: {{names}}",
     "layerFocus": "{{count}} min of focus",
     "sharedWithN_one": "Shared with {{count}} person",
-    "layerHabits_one": "{{count}} habit done: {{names}}"
+    "layerHabits_one": "{{count}} habit done: {{names}}",
+    "settings": "Calendar settings",
+    "goToday": "Go to today",
+    "chooseShared": "Choose which calendars to see",
+    "showAll": "Show all",
+    "noneSelected": "No shared calendar selected. Pick one or more from the button above."
   },
   "boot": {
     "title": "Starting ONMi",

@@ -836,7 +836,12 @@
     "layerHabits_other": "{{count}} hábitos hechos: {{names}}",
     "layerFocus": "{{count}} min de enfoque",
     "sharedWithN_one": "Compartido con {{count}} persona",
-    "layerHabits_one": "{{count}} hábito hecho: {{names}}"
+    "layerHabits_one": "{{count}} hábito hecho: {{names}}",
+    "settings": "Ajustes del calendario",
+    "goToday": "Ir a hoy",
+    "chooseShared": "Elige qué calendarios ver",
+    "showAll": "Ver todos",
+    "noneSelected": "No hay ningún calendario compartido seleccionado. Elige uno o varios desde el botón de arriba."
   },
   "boot": {
     "title": "Arrancando ONMi",

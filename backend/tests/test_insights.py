@@ -2,6 +2,14 @@ from datetime import date, timedelta
 
 from app.services import insights as calc
 
+
+def utc_today():
+    """El servidor cuenta los días en UTC; así los tests no dependen de la hora local."""
+    from datetime import datetime, timezone
+
+    return datetime.now(timezone.utc).date()
+
+
 T = date(2025, 3, 10)
 
 
@@ -50,12 +58,12 @@ def test_pct_change_and_window_summary():
 
 # ---- API ----------------------------------------------------------------------------------
 def _log_mood(client, back: int, mood: str):
-    day = (date.today() - timedelta(days=back)).isoformat()
+    day = (utc_today() - timedelta(days=back)).isoformat()
     assert client.put("/api/moods", json={"mood": mood, "date": day}).status_code == 200
 
 
 def _toggle(client, habit_id: int, back: int):
-    day = (date.today() - timedelta(days=back)).isoformat()
+    day = (utc_today() - timedelta(days=back)).isoformat()
     assert client.post(f"/api/habits/{habit_id}/toggle", json={"date": day}).status_code == 200
 
 
@@ -108,7 +116,7 @@ def test_insights_is_private_between_users(client, other_client, user):
 
 def test_insights_today_param_is_clamped_and_validated(client, user):
     assert client.get("/api/insights?today=not-a-date").status_code == 200
-    far = (date.today() + timedelta(days=30)).isoformat()
+    far = (utc_today() + timedelta(days=30)).isoformat()
     assert client.get(f"/api/insights?today={far}").status_code == 200  # se ignora, no rompe
 
 

@@ -1,12 +1,14 @@
 import {
   CalendarDays,
   Check,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Lock,
   Pencil,
   Plus,
   Repeat as RepeatIcon,
+  Settings,
   SkipForward,
   Users,
 } from "lucide-react";
@@ -17,6 +19,14 @@ import { Page, PageHeader } from "@/components/page";
 import { QueryError } from "@/components/query-error";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown";
 import { Badge, Card, CardContent, EmptyState } from "@/components/ui/card";
 import { useAuth } from "@/lib/auth";
 import {
@@ -281,7 +291,6 @@ export function CalendarPage() {
   const [editing, setEditing] = useState<CalendarEventDef | undefined>();
   const [dialog, setDialog] = useState(false);
   const [managing, setManaging] = useState(false);
-  const [showOptions, setShowOptions] = useState(false);
 
   const setPrefs = (patch: Partial<Prefs>) =>
     setPrefsState((p) => {
@@ -414,6 +423,60 @@ export function CalendarPage() {
         subtitle={t("calendar.subtitle")}
         actions={
           <>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label={t("calendar.settings")}
+                  title={t("calendar.settings")}
+                >
+                  <Settings />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="min-w-56">
+                <DropdownMenuLabel>{t("calendar.view")}</DropdownMenuLabel>
+                {(["month", "week"] as View[]).map((v) => (
+                  <DropdownMenuItem
+                    key={v}
+                    role="menuitemradio"
+                    aria-checked={view === v}
+                    onSelect={() => setPrefs({ view: v })}
+                  >
+                    <Check
+                      className={cn("size-4", view !== v && "opacity-0")}
+                      aria-hidden
+                    />
+                    {t(`calendar.${v}`)}
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel>
+                  {t("calendar.weekStarts")}
+                </DropdownMenuLabel>
+                {([0, 6] as const).map((d) => (
+                  <DropdownMenuItem
+                    key={d}
+                    role="menuitemradio"
+                    aria-checked={weekStart === d}
+                    onSelect={() => setPrefs({ weekStart: d })}
+                  >
+                    <Check
+                      className={cn("size-4", weekStart !== d && "opacity-0")}
+                      aria-hidden
+                    />
+                    <span className="capitalize">
+                      {weekdayName(d, lang, "long")}
+                    </span>
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={goToday}>
+                  <CalendarDays aria-hidden />
+                  {t("calendar.goToday")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button variant="outline" onClick={() => setManaging(true)}>
               <Users />{" "}
               <span className="max-sm:sr-only">{t("calendar.calendars")}</span>
@@ -426,6 +489,130 @@ export function CalendarPage() {
           </>
         }
       />
+
+      <div
+        className="inline-flex w-fit rounded-md bg-muted p-0.5 text-sm"
+        role="group"
+        aria-label={t("calendar.scope")}
+      >
+        {(["mine", "shared"] as const).map((sc) => {
+          const tabClass = cn(
+            "flex cursor-pointer items-center gap-1.5 rounded-[5px] px-3 py-1 font-medium transition-colors pointer-coarse:min-h-11",
+            scope === sc
+              ? "bg-card text-foreground shadow-xs"
+              : "text-muted-foreground",
+          );
+          if (sc === "mine")
+            return (
+              <button
+                key={sc}
+                type="button"
+                aria-pressed={scope === sc}
+                onClick={() => setPrefs({ scope: sc })}
+                className={tabClass}
+              >
+                {t("calendar.scope_mine")}
+              </button>
+            );
+          // Un solo calendario compartido: el botón lleva su nombre. Varios: «Compartidos conmigo» + selector.
+          if (sharedCals.length === 1) {
+            const only = sharedCals[0]!;
+            return (
+              <button
+                key={sc}
+                type="button"
+                aria-pressed={scope === sc}
+                onClick={() => setPrefs({ scope: sc })}
+                className={tabClass}
+              >
+                <Avatar name={only.user.name} className="size-5 text-[10px]" />
+                {only.user.name} · {only.calendar.name}
+              </button>
+            );
+          }
+          if (sharedCals.length === 0)
+            return (
+              <button
+                key={sc}
+                type="button"
+                aria-pressed={scope === sc}
+                onClick={() => setPrefs({ scope: sc })}
+                className={tabClass}
+              >
+                {t("calendar.scope_shared")}
+              </button>
+            );
+          const visible = sharedCals.filter(
+            (x) => !prefs.hiddenShared.includes(x.calendar.id),
+          ).length;
+          return (
+            <DropdownMenu
+              key={sc}
+              onOpenChange={(open) => open && setPrefs({ scope: "shared" })}
+            >
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  aria-pressed={scope === sc}
+                  className={tabClass}
+                >
+                  {t("calendar.scope_shared")}
+                  <span className="rounded-full bg-primary/15 px-1.5 text-[11px] text-primary">
+                    {visible}/{sharedCals.length}
+                  </span>
+                  <ChevronDown className="size-3.5" aria-hidden />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="min-w-64">
+                <DropdownMenuLabel>
+                  {t("calendar.chooseShared")}
+                </DropdownMenuLabel>
+                {sharedCals.map(({ calendar: c, user: u }) => {
+                  const on = !prefs.hiddenShared.includes(c.id);
+                  return (
+                    <DropdownMenuItem
+                      key={c.id}
+                      role="menuitemcheckbox"
+                      aria-checked={on}
+                      onSelect={(e) => {
+                        e.preventDefault(); // se queda abierto para elegir varios a la vez
+                        setPrefs({
+                          scope: "shared",
+                          hiddenShared: on
+                            ? [...prefs.hiddenShared, c.id]
+                            : prefs.hiddenShared.filter((x) => x !== c.id),
+                        });
+                      }}
+                    >
+                      <Check
+                        className={cn("size-4", !on && "opacity-0")}
+                        aria-hidden
+                      />
+                      <span
+                        aria-hidden
+                        className="size-2.5 shrink-0 rounded-full"
+                        style={{ background: c.color }}
+                      />
+                      <span className="min-w-0 flex-1 truncate">
+                        {u.name} · {c.name}
+                      </span>
+                    </DropdownMenuItem>
+                  );
+                })}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onSelect={(e) => {
+                    e.preventDefault();
+                    setPrefs({ scope: "shared", hiddenShared: [] });
+                  }}
+                >
+                  {t("calendar.showAll")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          );
+        })}
+      </div>
 
       {mine.isError ? (
         <QueryError error={mine.error} onRetry={() => void mine.refetch()} />
@@ -464,88 +651,6 @@ export function CalendarPage() {
                 >
                   <ChevronRight />
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={goToday}
-                  className="sm:ml-1"
-                >
-                  {t("calendar.today")}
-                </Button>
-                <div
-                  className="ml-auto flex items-center gap-1"
-                  role="group"
-                  aria-label={t("calendar.view")}
-                >
-                  {(["month", "week"] as View[]).map((v) => (
-                    <Button
-                      key={v}
-                      size="sm"
-                      variant={view === v ? "default" : "ghost"}
-                      aria-pressed={view === v}
-                      onClick={() => setPrefs({ view: v })}
-                    >
-                      {t(`calendar.${v}`)}
-                    </Button>
-                  ))}
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    aria-expanded={showOptions}
-                    onClick={() => setShowOptions((o) => !o)}
-                  >
-                    {t("calendar.options")}
-                  </Button>
-                </div>
-              </div>
-
-              {showOptions && (
-                <div className="space-y-3 rounded-md border border-border bg-muted/40 p-3">
-                  <fieldset className="flex flex-wrap items-center gap-2">
-                    <legend className="mb-1 text-xs font-medium text-muted-foreground">
-                      {t("calendar.weekStarts")}
-                    </legend>
-                    {([0, 6] as const).map((s) => (
-                      <Button
-                        key={s}
-                        size="sm"
-                        variant={weekStart === s ? "default" : "outline"}
-                        aria-pressed={weekStart === s}
-                        onClick={() => setPrefs({ weekStart: s })}
-                      >
-                        {weekdayName(s === 0 ? 0 : 6, lang, "long")}
-                      </Button>
-                    ))}
-                  </fieldset>
-                </div>
-              )}
-
-              <div
-                className="inline-flex w-fit rounded-md bg-muted p-0.5 text-sm"
-                role="group"
-                aria-label={t("calendar.scope")}
-              >
-                {(["mine", "shared"] as const).map((sc) => (
-                  <button
-                    key={sc}
-                    type="button"
-                    aria-pressed={scope === sc}
-                    onClick={() => setPrefs({ scope: sc })}
-                    className={cn(
-                      "cursor-pointer rounded-[5px] px-3 py-1 font-medium transition-colors pointer-coarse:min-h-11",
-                      scope === sc
-                        ? "bg-card text-foreground shadow-xs"
-                        : "text-muted-foreground",
-                    )}
-                  >
-                    {t(`calendar.scope_${sc}`)}
-                    {sc === "shared" && sharedCals.length > 0 && (
-                      <span className="ml-1.5 rounded-full bg-primary/15 px-1.5 text-[11px] text-primary">
-                        {sharedCals.length}
-                      </span>
-                    )}
-                  </button>
-                ))}
               </div>
 
               {scope === "mine" ? (
@@ -640,40 +745,13 @@ export function CalendarPage() {
                 <p className="rounded-md bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
                   {t("calendar.noSharedCalendars")}
                 </p>
-              ) : (
-                <div
-                  className="flex flex-wrap items-center gap-2"
-                  role="group"
-                  aria-label={t("calendar.sharedWithMe")}
-                >
-                  {sharedCals.map(({ calendar: c, user: p }) => {
-                    const on = !prefs.hiddenShared.includes(c.id);
-                    return (
-                      <button
-                        key={c.id}
-                        type="button"
-                        aria-pressed={on}
-                        onClick={() =>
-                          setPrefs({
-                            hiddenShared: on
-                              ? [...prefs.hiddenShared, c.id]
-                              : prefs.hiddenShared.filter((x) => x !== c.id),
-                          })
-                        }
-                        className={cn(
-                          "flex items-center gap-1.5 rounded-full border px-2 py-1 text-xs font-medium transition-colors pointer-coarse:min-h-11",
-                          on
-                            ? "border-primary bg-accent text-accent-foreground"
-                            : "border-border text-muted-foreground",
-                        )}
-                      >
-                        <Avatar name={p.name} className="size-5 text-[10px]" />
-                        {p.name} · {c.name}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
+              ) : sharedCals.every((x) =>
+                  prefs.hiddenShared.includes(x.calendar.id),
+                ) ? (
+                <p className="rounded-md bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+                  {t("calendar.noneSelected")}
+                </p>
+              ) : null}
 
               {view === "month" ? (
                 <div>

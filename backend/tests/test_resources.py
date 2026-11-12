@@ -1,4 +1,11 @@
-from datetime import date, timedelta
+from datetime import timedelta
+
+
+def utc_today():
+    """El servidor cuenta los días en UTC; así los tests no dependen de la hora local."""
+    from datetime import datetime, timezone
+
+    return datetime.now(timezone.utc).date()
 
 
 def iso(d):
@@ -60,7 +67,7 @@ def test_kanban_move_and_reorder(client, user):
 
 
 def test_project_progress_from_goals_and_due_date(client, user):
-    due = iso(date.today() + timedelta(days=3))
+    due = iso(utc_today() + timedelta(days=3))
     p = client.post("/api/projects", json={"name": "P", "due_date": due, "priority": "high"}).get_json()
     g1 = client.post("/api/goals", json={"title": "g1", "project_id": p["id"]}).get_json()
     client.post("/api/goals", json={"title": "g2", "project_id": p["id"]})
@@ -88,7 +95,7 @@ def test_goals_filters_and_ownership(client, other_client, user):
 # ---- habits -----------------------------------------------------------------------
 def test_habit_toggle_and_streaks(client, user):
     h = client.post("/api/habits", json={"name": "Run", "color": "#ff0000"}).get_json()
-    today = date.today()
+    today = utc_today()
     for back in (0, 1, 2, 5):
         client.post(f"/api/habits/{h['id']}/toggle", json={"date": iso(today - timedelta(days=back))})
     got = client.get(f"/api/habits/{h['id']}").get_json()
@@ -101,7 +108,7 @@ def test_habit_toggle_and_streaks(client, user):
 def test_habit_toggle_defaults_to_today_and_rejects_future(client, user):
     h = client.post("/api/habits", json={"name": "Read"}).get_json()
     assert client.post(f"/api/habits/{h['id']}/toggle").get_json()["done_today"] is True
-    future = iso(date.today() + timedelta(days=2))
+    future = iso(utc_today() + timedelta(days=2))
     assert client.post(f"/api/habits/{h['id']}/toggle", json={"date": future}).status_code == 422
 
 
@@ -127,7 +134,7 @@ def test_heatmap(client, user):
 def test_mood_upsert_and_history(client, user):
     assert client.put("/api/moods", json={"mood": "happy", "note": "great"}).status_code == 200
     client.put("/api/moods", json={"mood": "sad"})  # reemplaza el de hoy
-    yesterday = iso(date.today() - timedelta(days=1))
+    yesterday = iso(utc_today() - timedelta(days=1))
     client.put("/api/moods", json={"mood": "love", "date": yesterday})
     data = client.get("/api/moods?days=7").get_json()
     assert len(data["items"]) == 2 and data["today"]["mood"] == "sad"
@@ -167,13 +174,13 @@ def test_dashboard_aggregates(client, user):
 def test_timezone_slack_lets_users_ahead_of_utc_check_in_today(client, user):
     """Un usuario por delante de UTC vive en el «mañana» del servidor: su día se acepta y cuenta en la racha."""
     h = client.post("/api/habits", json={"name": "Run"}).get_json()
-    tomorrow = date.today() + timedelta(days=1)
+    tomorrow = utc_today() + timedelta(days=1)
     for back in (0, 1, 2):
         r = client.post(f"/api/habits/{h['id']}/toggle", json={"date": iso(tomorrow - timedelta(days=back))})
         assert r.status_code == 200
     assert r.get_json()["current_streak"] == 3
     assert client.put("/api/moods", json={"mood": "happy", "date": iso(tomorrow)}).status_code == 200
     assert (
-        client.put("/api/moods", json={"mood": "happy", "date": iso(date.today() + timedelta(days=2))}).status_code
+        client.put("/api/moods", json={"mood": "happy", "date": iso(utc_today() + timedelta(days=2))}).status_code
         == 422
     )

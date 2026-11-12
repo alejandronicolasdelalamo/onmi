@@ -11,12 +11,14 @@ from sqlalchemy import (
     Date,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     LargeBinary,
     String,
     Text,
     UniqueConstraint,
     false,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -653,6 +655,16 @@ class Calendar(db.Model):
     personas que elijas (compañeros aceptados), cada uno con su propia lista."""
 
     __tablename__ = "calendars"
+    # Un solo calendario Personal por usuario, aunque dos peticiones lo intenten crear a la vez.
+    __table_args__ = (
+        Index(
+            "uq_calendar_one_default_per_user",
+            "user_id",
+            unique=True,
+            sqlite_where=text("is_default"),
+            postgresql_where=text("is_default"),
+        ),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
