@@ -15,6 +15,8 @@ export interface User {
   is_demo: boolean;
   ai_coach_enabled: boolean;
   has_password: boolean;
+  /** ¿Tiene configurada una contraseña para las notas ocultas? */
+  notes_lock_enabled: boolean;
   created_at: string;
 }
 
@@ -29,6 +31,10 @@ export interface Note {
   content: string;
   tags: string[];
   pinned: boolean;
+  /** Nota oculta: sin título ni contenido hasta desbloquearla con la contraseña de notas. */
+  locked: boolean;
+  /** Si está en la papelera, cuándo se borró (se elimina de verdad a los 30 días). */
+  deleted_at: string | null;
   project_id: number | null;
   goal_id: number | null;
   created_at: string;
@@ -59,8 +65,43 @@ export interface Goal {
   due_date: string | null;
   project_id: number | null;
   habit_ids: number[];
+  milestones: {
+    id: number;
+    title: string;
+    done: boolean;
+    position: number;
+  }[];
+  milestones_done: number;
+  /** Lo que alimenta la meta: hábitos y notas vinculados. */
+  linked: {
+    habits: { id: number; name: string }[];
+    notes: { id: number; title: string }[];
+  };
   completed_at: string | null;
   created_at: string;
+}
+
+export interface SessionInfo {
+  id: number;
+  device: string;
+  created_at: string;
+  last_used_at: string;
+  current: boolean;
+}
+
+export interface SearchResults {
+  notes: { id: number; title: string }[];
+  habits: { id: number; name: string }[];
+  projects: { id: number; name: string }[];
+  goals: { id: number; title: string }[];
+  events: { id: number; title: string }[];
+}
+
+export interface ProjectActivityItem {
+  kind: "goal_created" | "goal_done" | "note";
+  id: number;
+  title: string;
+  at: string;
 }
 
 export interface Habit {
@@ -95,12 +136,24 @@ export interface MoodEntry {
   date: string;
   mood: MoodKind;
   note: string;
+  tags: string[];
+  /** Última vez que se guardó o cambió (UTC). */
+  updated_at: string | null;
 }
 
 export interface MoodHistory {
   items: MoodEntry[];
   counts: Record<MoodKind, number>;
   today: MoodEntry | null;
+  stats: {
+    logged_days: number;
+    /** Días seguidos con ánimo registrado. */
+    streak: number;
+    /** Media de 1 (triste) a 5 (enamorado). */
+    average: number | null;
+    /** Media de ánimo de los días con cada etiqueta, de mejor a peor. */
+    by_tag: { tag: string; count: number; average: number }[];
+  };
 }
 
 export interface PomodoroStats {
@@ -297,11 +350,15 @@ export interface CalendarEventDef {
   per_week: number | null;
   every_weeks: number;
   until: string | null;
+  /** Calendario al que pertenece (null = el Personal). */
+  calendar_id: number | null;
+  /** Solo lectura: se deduce de si su calendario se comparte con alguien. */
   shared: boolean;
 }
 
 export interface Occurrence {
   event_id: number;
+  calendar_id?: number | null;
   day: string;
   title: string;
   color: string;
@@ -316,16 +373,53 @@ export interface Occurrence {
   notes?: string;
 }
 
+export interface CalendarInfo {
+  id: number;
+  name: string;
+  color: string;
+  /** El calendario Personal: siempre privado, no se puede borrar ni compartir. */
+  is_default: boolean;
+  events: number;
+  /** Personas con las que se comparte. */
+  viewers: BuddyUser[];
+}
+
 export interface CalendarData {
   events: CalendarEventDef[];
+  occurrences: Occurrence[];
+  calendars: CalendarInfo[];
+}
+
+export interface SharedCalendar {
+  calendar: { id: number; name: string; color: string };
+  user: BuddyUser;
   occurrences: Occurrence[];
 }
 
 export interface SharedCalendars {
-  people: { user: BuddyUser; occurrences: Occurrence[] }[];
+  calendars: SharedCalendar[];
 }
 
-export interface CalendarSharing {
-  buddies: { user: BuddyUser; shared: boolean }[];
-  shared_with_me: BuddyUser[];
+export interface CalendarsOverview {
+  mine: CalendarInfo[];
+  shared_with_me: {
+    id: number;
+    name: string;
+    color: string;
+    owner: BuddyUser;
+  }[];
+  buddies: BuddyUser[];
+}
+
+/** Datos de ONMi que se ven sobre el calendario (siempre privados). */
+export type ActivityKind =
+  "habit" | "goal_due" | "goal_done" | "project_due" | "mood" | "focus";
+export interface ActivityItem {
+  kind: ActivityKind;
+  day: string;
+  id?: number;
+  title: string;
+  color?: string;
+  note?: string;
+  minutes?: number;
 }

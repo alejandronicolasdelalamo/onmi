@@ -8,9 +8,11 @@ import {
   ShieldCheck,
   Target,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useAuth, useSetLanguage } from "@/lib/auth";
+import { useSearch } from "@/lib/queries";
 import i18n, { LANGUAGES } from "@/lib/i18n";
 import { useTheme } from "@/lib/theme";
 import { NAV } from "./nav";
@@ -30,8 +32,48 @@ export function CommandPalette({
   const { toggle } = useTheme();
   const { user } = useAuth();
   const setLanguage = useSetLanguage();
+  const [query, setQuery] = useState("");
+  const [debounced, setDebounced] = useState("");
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(query.trim()), 200);
+    return () => clearTimeout(id);
+  }, [query]);
+  const { data: found } = useSearch(debounced);
+  const results: { key: string; label: string; to: string; kind: string }[] = [
+    ...(found?.notes ?? []).map((n) => ({
+      key: `n${n.id}`,
+      label: n.title,
+      to: `/notes?open=${n.id}`,
+      kind: "notes",
+    })),
+    ...(found?.habits ?? []).map((h) => ({
+      key: `h${h.id}`,
+      label: h.name,
+      to: "/habits",
+      kind: "habits",
+    })),
+    ...(found?.projects ?? []).map((p) => ({
+      key: `p${p.id}`,
+      label: p.name,
+      to: "/projects",
+      kind: "projects",
+    })),
+    ...(found?.goals ?? []).map((g) => ({
+      key: `g${g.id}`,
+      label: g.title,
+      to: "/goals",
+      kind: "goals",
+    })),
+    ...(found?.events ?? []).map((e) => ({
+      key: `e${e.id}`,
+      label: e.title,
+      to: "/calendar",
+      kind: "calendar",
+    })),
+  ];
 
   const run = (fn: () => void) => () => {
+    setQuery("");
     onOpenChange(false);
     fn();
   };
@@ -39,7 +81,13 @@ export function CommandPalette({
   const lang = i18n.language?.startsWith("es") ? "es" : "en";
 
   return (
-    <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
+    <DialogPrimitive.Root
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) setQuery("");
+        onOpenChange(o);
+      }}
+    >
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/50 backdrop-blur-[2px]" />
         <DialogPrimitive.Content
@@ -54,6 +102,8 @@ export function CommandPalette({
           </DialogPrimitive.Description>
           <Command label={t("palette.open")}>
             <Command.Input
+              value={query}
+              onValueChange={setQuery}
               autoFocus
               placeholder={t("palette.placeholder")}
               className="h-12 w-full border-b border-border bg-transparent px-4 text-sm outline-none placeholder:text-muted-foreground"
@@ -62,6 +112,29 @@ export function CommandPalette({
               <Command.Empty className="px-3 py-6 text-center text-sm text-muted-foreground">
                 {t("palette.empty")}
               </Command.Empty>
+
+              {results.length > 0 && (
+                <Command.Group
+                  forceMount
+                  heading={t("palette.results")}
+                  className="mb-1 text-xs text-muted-foreground [&_[cmdk-group-heading]]:px-2.5 [&_[cmdk-group-heading]]:py-1.5"
+                >
+                  {results.map((r) => (
+                    <Command.Item
+                      key={r.key}
+                      forceMount
+                      className={itemClass}
+                      value={`result-${r.key}`}
+                      onSelect={run(() => navigate(r.to))}
+                    >
+                      <span className="w-20 shrink-0 text-xs text-muted-foreground">
+                        {t(`nav.${r.kind}`)}
+                      </span>
+                      <span className="truncate">{r.label}</span>
+                    </Command.Item>
+                  ))}
+                </Command.Group>
+              )}
 
               <Command.Group
                 heading={t("palette.actions")}

@@ -14,6 +14,8 @@ import "./index.css";
 import { ErrorBoundary } from "./components/query-error";
 const queryClient = new QueryClient({
   defaultOptions: {
+    // Sin conexión, guardar falla al momento (y se avisa) en vez de quedarse esperando en silencio.
+    mutations: { networkMode: "always" },
     queries: {
       staleTime: 30_000,
       refetchOnWindowFocus: false,

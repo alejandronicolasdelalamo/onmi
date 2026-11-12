@@ -28,6 +28,8 @@ export interface Note {
   content: string;
   tags: string[];
   pinned: boolean;
+  /** Nota oculta con contraseña (se gestiona desde la web): el servidor no envía su contenido. */
+  locked?: boolean;
   updated_at: string;
 }
 

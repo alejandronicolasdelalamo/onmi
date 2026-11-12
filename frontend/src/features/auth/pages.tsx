@@ -130,7 +130,7 @@ export function LoginPage() {
         </div>
         <SubmitButton pending={m.isPending}>{t("auth.signIn")}</SubmitButton>
       </form>
-      <SocialSection />
+      <SocialSection withPasskey />
       <p className="mt-6 text-center text-sm text-muted-foreground">
         {t("auth.noAccount")}{" "}
         <Link

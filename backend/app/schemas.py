@@ -72,6 +72,9 @@ class NoteIn(Base):
     content: str = Field(default="", max_length=20000)
     tags: list[Tag] = Field(default_factory=list, max_length=10)
     pinned: bool = False
+    locked: bool = False
+    # Lo marca el cliente al reenviar una nota guardada sin conexión: evita duplicados si el primer intento sí llegó.
+    queued: bool = False
     project_id: int | None = None
     goal_id: int | None = None
 
@@ -81,8 +84,34 @@ class NoteUpdate(Base):
     content: str | None = Field(default=None, max_length=20000)
     tags: list[Tag] | None = Field(default=None, max_length=10)
     pinned: bool | None = None
+    locked: bool | None = None
     project_id: int | None = None
     goal_id: int | None = None
+
+
+class NotesPasswordIn(Base):
+    """Contraseña de las notas ocultas (independiente de la de la cuenta)."""
+
+    password: Annotated[str, StringConstraints(min_length=4, max_length=128)]
+
+
+class NotesPasswordChangeIn(Base):
+    new_password: Annotated[str, StringConstraints(min_length=4, max_length=128)]
+    # La contraseña de notas actual o, si se olvidó, la de la cuenta.
+    current_password: str = Field(min_length=1, max_length=128)
+
+
+class NotesPasswordRemoveIn(Base):
+    current_password: str = Field(min_length=1, max_length=128)
+
+
+class MilestoneIn(Base):
+    title: str = Field(min_length=1, max_length=160)
+
+
+class MilestoneUpdate(Base):
+    title: str | None = Field(default=None, min_length=1, max_length=160)
+    done: bool | None = None
 
 
 class ProjectIn(Base):
@@ -151,10 +180,30 @@ class ToggleIn(Base):
     date: Date | None = None
 
 
+MOOD_TAGS = (
+    "sleep",
+    "work",
+    "study",
+    "family",
+    "friends",
+    "partner",
+    "exercise",
+    "health",
+    "food",
+    "weather",
+    "money",
+    "hobby",
+)
+MoodTagLiteral = Literal[
+    "sleep", "work", "study", "family", "friends", "partner", "exercise", "health", "food", "weather", "money", "hobby"
+]
+
+
 class MoodIn(Base):
     mood: MoodLiteral
     note: str = Field(default="", max_length=300)
     date: Date | None = None
+    tags: list[MoodTagLiteral] = Field(default_factory=list, max_length=6)
 
 
 class PomodoroIn(Base):
@@ -225,7 +274,7 @@ class CalendarEventIn(Base):
     per_week: int | None = Field(default=None, ge=1, le=7)
     every_weeks: int = Field(default=1, ge=1, le=4)
     until: date | None = None
-    shared: bool = False
+    calendar_id: int | None = None  # None = el calendario Personal (privado)
 
     @field_validator("weekdays")
     @classmethod
@@ -269,3 +318,15 @@ class EventDayIn(Base):
 
 class CalendarSharingIn(Base):
     user_ids: list[int] = Field(max_length=100)
+
+
+class CalendarIn(Base):
+    name: str = Field(min_length=1, max_length=60)
+    color: HexColor = "#6366f1"
+    user_ids: list[int] = Field(default_factory=list, max_length=100)
+
+
+class CalendarPatch(Base):
+    name: str | None = Field(default=None, min_length=1, max_length=60)
+    color: HexColor | None = None
+    user_ids: list[int] | None = Field(default=None, max_length=100)

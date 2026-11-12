@@ -115,6 +115,21 @@ def _register_handlers(app: Flask) -> None:
     def invalid(reason):
         return _auth_error("invalid_token", "Invalid token")
 
+    @jwt.token_in_blocklist_loader
+    def is_revoked(header, payload):
+        """Un token cuya sesión se cerró (o dejó de existir) ya no vale, aunque no haya caducado."""
+        from .models import UserSession
+
+        sid = payload.get("sid")
+        if not sid:  # tokens anteriores a las sesiones por dispositivo
+            return False
+        session = db.session.get(UserSession, sid)
+        return session is None or session.revoked_at is not None
+
+    @jwt.revoked_token_loader
+    def revoked(header, payload):
+        return _auth_error("session_revoked", "This session was signed out")
+
     @jwt.expired_token_loader
     def expired(header, payload):
         return _auth_error("token_expired", "Your session has expired")

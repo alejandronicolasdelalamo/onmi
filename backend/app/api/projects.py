@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify
 from flask_jwt_extended import jwt_required
 
 from ..extensions import db
-from ..models import Priority, Project, ProjectStatus
+from ..models import Note, Priority, Project, ProjectStatus
 from ..openapi import doc
 from ..schemas import ProjectIn, ProjectUpdate
 from ..utils import ApiError, apply_updates, current_user, get_owned, parse_body
@@ -107,3 +107,26 @@ def delete_project(project_id):
     _reindex(_column(user.id, status))
     db.session.commit()
     return jsonify({"ok": True})
+
+
+@bp.get("/<int:project_id>/activity")
+@jwt_required()
+@doc(
+    "Recent activity of a project",
+    "Projects",
+    description="Goals created or completed and notes linked to the project (hidden or deleted notes are left out).",
+)
+def project_activity(project_id):
+    user = current_user()
+    project = get_owned(Project, project_id, user)
+    items = []
+    for g in project.goals:
+        items.append({"kind": "goal_created", "id": g.id, "title": g.title, "at": g.created_at.isoformat()})
+        if g.completed_at:
+            items.append({"kind": "goal_done", "id": g.id, "title": g.title, "at": g.completed_at.isoformat()})
+    notes = db.session.scalars(
+        db.select(Note).filter_by(user_id=user.id, project_id=project.id, locked=False, deleted_at=None)
+    )
+    items += [{"kind": "note", "id": n.id, "title": n.title, "at": n.updated_at.isoformat()} for n in notes]
+    items.sort(key=lambda i: i["at"], reverse=True)
+    return jsonify({"items": items[:10]})

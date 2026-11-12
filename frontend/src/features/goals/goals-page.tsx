@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/dialog";
 import { Field, Input, NativeSelect, Textarea } from "@/components/ui/form";
 import { ShareToggle } from "@/components/ui/share-toggle";
+import { MilestonesSection } from "./milestones";
 import { errorMessage } from "@/lib/errors";
 import {
   useCreateGoal,
@@ -158,6 +159,7 @@ function GoalDialog({
               )}
             </Field>
           </div>
+          {goal && <MilestonesSection goalId={goal.id} />}
           <ShareToggle
             checked={shared}
             onChange={(v) => form.setValue("shared", v)}
@@ -219,6 +221,17 @@ function GoalRow({
         )}
         <div className="flex flex-wrap items-center gap-2">
           {project && <Badge tone="primary">{project}</Badge>}
+          {goal.milestones.length > 0 && (
+            <Badge
+              tone={
+                goal.milestones_done === goal.milestones.length
+                  ? "success"
+                  : "neutral"
+              }
+            >
+              {goal.milestones_done}/{goal.milestones.length}
+            </Badge>
+          )}
           <Badge tone={goal.shared ? "success" : "neutral"}>
             {goal.shared ? (
               <Users className="size-3" aria-hidden />
@@ -339,6 +352,7 @@ export function GoalsPage() {
       ) : (
         <Card>
           <EmptyState
+            art="goals"
             icon={<Target />}
             title={t("goals.empty")}
             description={t("goals.emptyDesc")}

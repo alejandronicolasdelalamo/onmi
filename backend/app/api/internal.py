@@ -2,6 +2,7 @@ import hmac
 
 from flask import Blueprint, current_app, jsonify, request
 
+from ..services.notes_extras import purge_expired
 from ..services.reminders import send_due_reminders
 from ..utils import ApiError
 
@@ -20,4 +21,4 @@ def tick():
     given = request.headers.get("Authorization", "").removeprefix("Bearer ").strip()
     if not hmac.compare_digest(given.encode(), expected.encode()):
         raise ApiError("Invalid token", 401, "unauthorized")
-    return jsonify({"ok": True, **send_due_reminders()})
+    return jsonify({"ok": True, **send_due_reminders(), **purge_expired()})

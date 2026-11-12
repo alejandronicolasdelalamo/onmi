@@ -161,3 +161,13 @@ def test_demo_login_seeds_data(client):
 def test_public_config(client):
     cfg = client.get("/api/auth/config").get_json()
     assert cfg["google_client_id"] == "test-client-id" and cfg["demo_enabled"] is True
+
+
+def test_session_cookies_are_persistent_and_refresh_slides(client, user):
+    """La sesion sobrevive a cerrar el navegador (cookies con caducidad) y /refresh la renueva."""
+    login = client.post("/api/auth/login", json={"email": "ana@example.com", "password": PASSWORD})
+    cookies = [c for c in login.headers.getlist("Set-Cookie") if "csrf" not in c]
+    assert cookies and all("Max-Age" in c or "Expires" in c for c in cookies)
+    refresh = client.post("/api/auth/refresh")
+    assert refresh.status_code == 200
+    assert any(c.startswith("refresh_token_cookie=") for c in refresh.headers.getlist("Set-Cookie"))

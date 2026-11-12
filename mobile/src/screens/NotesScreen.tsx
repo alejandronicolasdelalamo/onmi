@@ -18,6 +18,20 @@ export const snippet = (md: string) => md.replace(/```[\s\S]*?```/g, " ").replac
 
 const NoteRow = memo(function NoteRow({ note, onOpen }: { note: Note; onOpen: (id: number) => void }) {
   const c = useTheme();
+  if (note.locked) {
+    // Las notas ocultas se desbloquean desde la web; aquí solo se muestra que existen.
+    return (
+      <View style={[styles.row, { backgroundColor: c.card, borderColor: c.border }]} accessible accessibilityLabel={t("notes.hidden")}>
+        <View style={styles.rowHead}>
+          <Ionicons name="lock-closed" size={16} color={c.muted} />
+          <Text numberOfLines={1} style={[styles.rowTitle, { color: c.muted }]}>
+            {t("notes.hidden")}
+          </Text>
+        </View>
+        <Text style={{ color: c.muted, fontSize: 14 }}>{t("notes.hiddenHint")}</Text>
+      </View>
+    );
+  }
   return (
     <Pressable
       accessibilityRole="button"

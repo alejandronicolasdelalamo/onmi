@@ -26,7 +26,7 @@ test.describe("autenticación", () => {
 
     await page.getByLabel("Email").fill(email);
     await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
-    await page.getByRole("button", { name: "Sign in" }).click();
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
     await expect(page.getByRole("heading", { level: 1 })).toContainText("Ana");
   });
 
@@ -37,7 +37,7 @@ test.describe("autenticación", () => {
     await expect(page).toHaveURL(/\/login$/);
     await page.getByLabel("Email").fill("nadie@example.com");
     await page.getByLabel("Password", { exact: true }).fill("whatever123");
-    await page.getByRole("button", { name: "Sign in" }).click();
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
     await expect(page.getByText("Incorrect email or password.")).toBeVisible();
   });
 

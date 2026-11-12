@@ -10,6 +10,7 @@ import {
   SkipForward,
   Users,
 } from "lucide-react";
+import { MoodFace } from "@/components/mood-face";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Page, PageHeader } from "@/components/page";
@@ -18,8 +19,18 @@ import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge, Card, CardContent, EmptyState } from "@/components/ui/card";
 import { useAuth } from "@/lib/auth";
-import { useCalendar, useMarkDay, useSharedCalendars } from "@/lib/queries";
-import type { BuddyUser, CalendarEventDef, Occurrence } from "@/lib/types";
+import {
+  useCalendar,
+  useCalendarActivity,
+  useMarkDay,
+  useSharedCalendars,
+} from "@/lib/queries";
+import type {
+  BuddyUser,
+  CalendarEventDef,
+  MoodKind,
+  Occurrence,
+} from "@/lib/types";
 import { addDays, cn, localISODate } from "@/lib/utils";
 import {
   addMonths,
@@ -32,18 +43,36 @@ import {
   weekdaysSummary,
 } from "./calendar-utils";
 import { EventDialog } from "./event-dialog";
-import { SharingDialog } from "./sharing-dialog";
+import { buildLayerItems, LAYERS, type LayerKey } from "./calendar-layers";
+import { CalendarsDialog } from "./calendars-dialog";
 
 type View = "month" | "week";
+type Scope = "mine" | "shared";
 interface Prefs {
   weekStart: 0 | 6;
   view: View;
-  hidden: number[];
+  scope: Scope;
+  /** Calendarios míos que están ocultos. */
+  hiddenCals: number[];
+  /** Calendarios compartidos conmigo que están ocultos. */
+  hiddenShared: number[];
+  /** Datos de ONMi que se ven sobre mi calendario privado. */
+  layers: LayerKey[];
 }
 const PREFS_KEY = "onmi-calendar-prefs";
 
+const nums = (v: unknown): number[] =>
+  Array.isArray(v) ? v.filter((n): n is number => typeof n === "number") : [];
+
 function loadPrefs(): Prefs {
-  const fallback: Prefs = { weekStart: 0, view: "month", hidden: [] };
+  const fallback: Prefs = {
+    weekStart: 0,
+    view: "month",
+    scope: "mine",
+    hiddenCals: [],
+    hiddenShared: [],
+    layers: [...LAYERS],
+  };
   try {
     const raw = JSON.parse(
       localStorage.getItem(PREFS_KEY) ?? "null",
@@ -51,9 +80,14 @@ function loadPrefs(): Prefs {
     return {
       weekStart: raw?.weekStart === 6 ? 6 : 0,
       view: raw?.view === "week" ? "week" : "month",
-      hidden: Array.isArray(raw?.hidden)
-        ? raw.hidden.filter((n) => typeof n === "number")
-        : [],
+      scope: raw?.scope === "shared" ? "shared" : "mine",
+      hiddenCals: nums(raw?.hiddenCals),
+      hiddenShared: nums(raw?.hiddenShared),
+      layers: Array.isArray(raw?.layers)
+        ? raw.layers.filter((l): l is LayerKey =>
+            (LAYERS as readonly string[]).includes(l),
+          )
+        : fallback.layers,
     };
   } catch {
     return fallback;
@@ -62,7 +96,8 @@ function loadPrefs(): Prefs {
 
 type Item =
   | { kind: "mine"; occ: Occurrence }
-  | { kind: "shared"; occ: Occurrence; user: BuddyUser };
+  | { kind: "shared"; occ: Occurrence; user: BuddyUser; calendar: string }
+  | { kind: "layer"; occ: Occurrence; layer: LayerKey; mood?: MoodKind };
 
 function timeLabel(o: Occurrence): string | null {
   if (!o.start_time) return null;
@@ -85,6 +120,34 @@ function DayItem({
   const { occ } = item;
   const mine = item.kind === "mine";
   const time = timeLabel(occ);
+  if (item.kind === "layer")
+    return (
+      <li className="flex items-center gap-3 py-2.5">
+        {item.mood ? (
+          <MoodFace mood={item.mood} className="size-6 shrink-0" />
+        ) : (
+          <span
+            className="size-3 shrink-0 rounded-full"
+            style={{ background: occ.color }}
+            aria-hidden
+          />
+        )}
+        <div className="min-w-0 flex-1">
+          <p
+            className={cn(
+              "text-sm",
+              occ.done && item.layer === "goals" && "line-through",
+            )}
+          >
+            {occ.title}
+          </p>
+          <p className="flex items-center gap-1 text-xs text-muted-foreground">
+            <Lock className="size-3" aria-hidden />
+            {t(`calendar.layers.${item.layer}`)}
+          </p>
+        </div>
+      </li>
+    );
   return (
     <li className="flex items-start gap-3 py-3">
       {mine ? (
@@ -162,10 +225,10 @@ function DayItem({
               <Users className="size-3" /> {t("calendar.shared")}
             </span>
           )}
-          {!mine && (
+          {item.kind === "shared" && (
             <span className="flex items-center gap-1.5">
               <Avatar name={item.user.name} className="size-5 text-[10px]" />
-              {item.user.name}
+              {item.user.name} · {item.calendar}
             </span>
           )}
         </div>
@@ -217,7 +280,7 @@ export function CalendarPage() {
   const [selected, setSelected] = useState(today);
   const [editing, setEditing] = useState<CalendarEventDef | undefined>();
   const [dialog, setDialog] = useState(false);
-  const [sharing, setSharing] = useState(false);
+  const [managing, setManaging] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
 
   const setPrefs = (patch: Partial<Prefs>) =>
@@ -243,24 +306,55 @@ export function CalendarPage() {
   const to = cells[cells.length - 1]!;
   const mine = useCalendar(from, to);
   const shared = useSharedCalendars(from, to);
+  const { scope } = prefs;
+  const showLayers = scope === "mine" && prefs.layers.length > 0;
+  const activity = useCalendarActivity(from, to, showLayers);
+  const personalId = mine.data?.calendars.find((c) => c.is_default)?.id;
 
   const byDay = useMemo(() => {
     const map = new Map<string, Item[]>();
     const push = (day: string, item: Item) =>
       map.set(day, [...(map.get(day) ?? []), item]);
-    for (const occ of mine.data?.occurrences ?? [])
-      push(occ.day, { kind: "mine", occ });
-    for (const person of shared.data?.people ?? []) {
-      if (prefs.hidden.includes(person.user.id)) continue;
-      for (const occ of person.occurrences)
-        push(occ.day, { kind: "shared", occ, user: person.user });
+    if (scope === "mine") {
+      for (const occ of mine.data?.occurrences ?? []) {
+        if (prefs.hiddenCals.includes(occ.calendar_id ?? personalId ?? -1))
+          continue;
+        push(occ.day, { kind: "mine", occ });
+      }
+      for (const l of buildLayerItems(activity.data ?? [], prefs.layers, {
+        habits: (count, names) => t("calendar.layerHabits", { count, names }),
+        focus: (minutes) => t("calendar.layerFocus", { count: minutes }),
+        mood: (m) => t(`mood.kinds.${m}`),
+      }))
+        push(l.occ.day, { kind: "layer", ...l });
+    } else {
+      for (const sc of shared.data?.calendars ?? []) {
+        if (prefs.hiddenShared.includes(sc.calendar.id)) continue;
+        for (const occ of sc.occurrences)
+          push(occ.day, {
+            kind: "shared",
+            occ: { ...occ, color: occ.color },
+            user: sc.user,
+            calendar: sc.calendar.name,
+          });
+      }
     }
     for (const list of map.values())
       list.sort((a, b) =>
         (a.occ.start_time ?? "").localeCompare(b.occ.start_time ?? ""),
       );
     return map;
-  }, [mine.data, shared.data, prefs.hidden]);
+  }, [
+    scope,
+    mine.data,
+    shared.data,
+    activity.data,
+    prefs.hiddenCals,
+    prefs.hiddenShared,
+    prefs.layers,
+    personalId,
+    t,
+  ]);
 
   const eventById = (id: number) => mine.data?.events.find((e) => e.id === id);
   const lang = i18n.language;
@@ -282,7 +376,7 @@ export function CalendarPage() {
     setSelected(day);
     setDialog(true);
   };
-  const people = shared.data?.people ?? [];
+  const sharedCals = shared.data?.calendars ?? [];
   const selectedItems = byDay.get(selected) ?? [];
   const selectedLabel = new Intl.DateTimeFormat(lang, {
     weekday: "long",
@@ -320,9 +414,9 @@ export function CalendarPage() {
         subtitle={t("calendar.subtitle")}
         actions={
           <>
-            <Button variant="outline" onClick={() => setSharing(true)}>
+            <Button variant="outline" onClick={() => setManaging(true)}>
               <Users />{" "}
-              <span className="max-sm:sr-only">{t("calendar.share")}</span>
+              <span className="max-sm:sr-only">{t("calendar.calendars")}</span>
             </Button>
             {/* También en móvil (solo el icono): un botón flotante tapaba los lápices de editar. */}
             <Button onClick={() => openNew()}>
@@ -426,38 +520,155 @@ export function CalendarPage() {
                 </div>
               )}
 
-              {people.length > 0 && (
+              <div
+                className="inline-flex w-fit rounded-md bg-muted p-0.5 text-sm"
+                role="group"
+                aria-label={t("calendar.scope")}
+              >
+                {(["mine", "shared"] as const).map((sc) => (
+                  <button
+                    key={sc}
+                    type="button"
+                    aria-pressed={scope === sc}
+                    onClick={() => setPrefs({ scope: sc })}
+                    className={cn(
+                      "cursor-pointer rounded-[5px] px-3 py-1 font-medium transition-colors pointer-coarse:min-h-11",
+                      scope === sc
+                        ? "bg-card text-foreground shadow-xs"
+                        : "text-muted-foreground",
+                    )}
+                  >
+                    {t(`calendar.scope_${sc}`)}
+                    {sc === "shared" && sharedCals.length > 0 && (
+                      <span className="ml-1.5 rounded-full bg-primary/15 px-1.5 text-[11px] text-primary">
+                        {sharedCals.length}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              {scope === "mine" ? (
+                <>
+                  <div
+                    className="flex flex-wrap items-center gap-2"
+                    role="group"
+                    aria-label={t("calendar.myCalendars")}
+                  >
+                    {(mine.data?.calendars ?? []).map((c) => {
+                      const on = !prefs.hiddenCals.includes(c.id);
+                      return (
+                        <button
+                          key={c.id}
+                          type="button"
+                          aria-pressed={on}
+                          onClick={() =>
+                            setPrefs({
+                              hiddenCals: on
+                                ? [...prefs.hiddenCals, c.id]
+                                : prefs.hiddenCals.filter((x) => x !== c.id),
+                            })
+                          }
+                          className={cn(
+                            "flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors pointer-coarse:min-h-11",
+                            on
+                              ? "border-transparent bg-muted text-foreground"
+                              : "border-border text-muted-foreground line-through",
+                          )}
+                        >
+                          <span
+                            aria-hidden
+                            className="size-2.5 rounded-full"
+                            style={{
+                              background: on ? c.color : "transparent",
+                              border: `2px solid ${c.color}`,
+                            }}
+                          />
+                          {c.is_default ? t("calendar.personal") : c.name}
+                          {c.viewers.length > 0 ? (
+                            <Users
+                              className="size-3"
+                              aria-label={t("calendar.shared")}
+                            />
+                          ) : (
+                            <Lock
+                              className="size-3 opacity-60"
+                              aria-label={t("calendar.private")}
+                            />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div
+                    className="flex flex-wrap items-center gap-2"
+                    role="group"
+                    aria-label={t("calendar.myData")}
+                  >
+                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <Lock className="size-3" aria-hidden />{" "}
+                      {t("calendar.myData")}
+                    </span>
+                    {LAYERS.map((l) => {
+                      const on = prefs.layers.includes(l);
+                      return (
+                        <button
+                          key={l}
+                          type="button"
+                          aria-pressed={on}
+                          onClick={() =>
+                            setPrefs({
+                              layers: on
+                                ? prefs.layers.filter((x) => x !== l)
+                                : [...prefs.layers, l],
+                            })
+                          }
+                          className={cn(
+                            "rounded-full border px-2.5 py-1 text-xs font-medium transition-colors pointer-coarse:min-h-11",
+                            on
+                              ? "border-primary bg-accent text-accent-foreground"
+                              : "border-border text-muted-foreground",
+                          )}
+                        >
+                          {t(`calendar.layers.${l}`)}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              ) : sharedCals.length === 0 ? (
+                <p className="rounded-md bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+                  {t("calendar.noSharedCalendars")}
+                </p>
+              ) : (
                 <div
                   className="flex flex-wrap items-center gap-2"
                   role="group"
                   aria-label={t("calendar.sharedWithMe")}
                 >
-                  <span className="text-xs text-muted-foreground">
-                    {t("calendar.sharedWithMe")}
-                  </span>
-                  {people.map(({ user: p }) => {
-                    const on = !prefs.hidden.includes(p.id);
+                  {sharedCals.map(({ calendar: c, user: p }) => {
+                    const on = !prefs.hiddenShared.includes(c.id);
                     return (
                       <button
-                        key={p.id}
+                        key={c.id}
                         type="button"
                         aria-pressed={on}
                         onClick={() =>
                           setPrefs({
-                            hidden: on
-                              ? [...prefs.hidden, p.id]
-                              : prefs.hidden.filter((x) => x !== p.id),
+                            hiddenShared: on
+                              ? [...prefs.hiddenShared, c.id]
+                              : prefs.hiddenShared.filter((x) => x !== c.id),
                           })
                         }
                         className={cn(
-                          "flex items-center gap-1.5 rounded-full border px-2 py-1 text-xs font-medium transition-colors pointer-coarse:py-2",
+                          "flex items-center gap-1.5 rounded-full border px-2 py-1 text-xs font-medium transition-colors pointer-coarse:min-h-11",
                           on
                             ? "border-primary bg-accent text-accent-foreground"
                             : "border-border text-muted-foreground",
                         )}
                       >
-                        <Avatar name={p.name} className="size-5 text-[10px]" />{" "}
-                        {p.name}
+                        <Avatar name={p.name} className="size-5 text-[10px]" />
+                        {p.name} · {c.name}
                       </button>
                     );
                   })}
@@ -526,7 +737,7 @@ export function CalendarPage() {
                                 )}
                                 style={{
                                   background:
-                                    it.kind === "mine"
+                                    it.kind !== "shared"
                                       ? it.occ.color
                                       : undefined,
                                   // El anillo hueco distingue lo que comparten otros.
@@ -550,7 +761,12 @@ export function CalendarPage() {
                                         background: `${it.occ.color}26`,
                                         borderLeft: `3px solid ${it.occ.color}`,
                                       }
-                                    : { border: `1px dashed ${it.occ.color}` }
+                                    : it.kind === "layer"
+                                      ? {
+                                          background: `${it.occ.color}1a`,
+                                          fontStyle: "italic",
+                                        }
+                                      : { border: `1px dashed ${it.occ.color}` }
                                 }
                               >
                                 {it.occ.title}
@@ -628,6 +844,7 @@ export function CalendarPage() {
                 ) : selectedItems.length === 0 &&
                   (mine.data?.events.length ?? 0) === 0 ? (
                   <EmptyState
+                    art="calendar"
                     icon={<CalendarDays />}
                     title={t("calendar.empty")}
                     description={t("calendar.emptyDesc")}
@@ -652,12 +869,11 @@ export function CalendarPage() {
         open={dialog}
         onOpenChange={setDialog}
         weekStart={weekStart}
-        canShare={!user?.is_demo}
       />
-      <SharingDialog
-        open={sharing}
-        onOpenChange={setSharing}
-        disabled={!!user?.is_demo}
+      <CalendarsDialog
+        open={managing}
+        onOpenChange={setManaging}
+        demo={!!user?.is_demo}
       />
     </Page>
   );

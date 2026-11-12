@@ -359,6 +359,7 @@ export function BuddiesPage() {
             {data.friends.length === 0 ? (
               <Card>
                 <EmptyState
+                  art="buddies"
                   icon={<Users />}
                   title={t("buddies.empty")}
                   description={t("buddies.emptyDesc")}

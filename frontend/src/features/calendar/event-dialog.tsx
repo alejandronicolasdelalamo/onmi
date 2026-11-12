@@ -9,11 +9,11 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Field, Input, NativeSelect, Textarea } from "@/components/ui/form";
-import { ShareToggle } from "@/components/ui/share-toggle";
 import { Switch } from "@/components/ui/switch";
 import { ApiError } from "@/lib/api";
 import { errorMessage } from "@/lib/errors";
 import {
+  useCalendars,
   useCreateEvent,
   useDeleteEvent,
   useUpdateEvent,
@@ -50,7 +50,7 @@ const blank = (day: string): EventInput => ({
   per_week: 3,
   every_weeks: 1,
   until: null,
-  shared: false,
+  calendar_id: null,
 });
 
 /** Campos que pueden mostrar un error junto a sí mismos; `form` es un aviso general del formulario. */
@@ -63,18 +63,17 @@ function EventForm({
   defaultDay,
   onOpenChange,
   weekStart,
-  canShare,
 }: {
   event?: CalendarEventDef;
   defaultDay: string;
   onOpenChange: (open: boolean) => void;
   weekStart: 0 | 6;
-  canShare: boolean;
 }) {
   const { t, i18n } = useTranslation();
   const create = useCreateEvent();
   const update = useUpdateEvent();
   const del = useDeleteEvent();
+  const { data: calendars } = useCalendars();
   // Cada apertura monta el formulario de cero, así que el estado inicial sale del evento (o de un borrador vacío).
   const base = event ?? blank(defaultDay);
   const [v, setV] = useState<EventInput>(() => ({
@@ -87,6 +86,10 @@ function EventForm({
   const [allDay, setAllDay] = useState(!base.start_time);
   const [errors, setErrors] = useState<FormErrors>({});
   const [confirm, setConfirm] = useState(false);
+  const personalId = calendars?.mine.find((c) => c.is_default)?.id;
+  const calendarValue = v.calendar_id ?? personalId ?? "";
+  const calViewers =
+    calendars?.mine.find((c) => c.id === calendarValue)?.viewers ?? [];
 
   const set = <K extends keyof EventInput>(k: K, value: EventInput[K]) => {
     setV((p) => ({ ...p, [k]: value }));
@@ -403,15 +406,31 @@ function EventForm({
           )}
         </Field>
 
-        <ShareToggle
-          checked={v.shared}
-          onChange={(value) => set("shared", value)}
-          label={t("calendar.shareEvent")}
+        <Field
+          label={t("calendar.calendarField")}
           hint={
-            canShare ? t("calendar.shareEventHint") : t("calendar.shareDemo")
+            calViewers.length > 0
+              ? t("calendar.eventVisibleTo", {
+                  names: calViewers.map((x) => x.name).join(", "),
+                })
+              : t("calendar.eventPrivate")
           }
-          disabled={!canShare}
-        />
+        >
+          {(p) => (
+            <NativeSelect
+              {...p}
+              value={calendarValue}
+              onChange={(e) => set("calendar_id", Number(e.target.value))}
+            >
+              {(calendars?.mine ?? []).map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.is_default ? t("calendar.personal") : c.name}
+                  {c.viewers.length > 0 ? ` · ${t("calendar.shared")}` : ""}
+                </option>
+              ))}
+            </NativeSelect>
+          )}
+        </Field>
 
         {errors.form && (
           <p role="alert" className="text-sm text-destructive">
@@ -470,14 +489,12 @@ export function EventDialog({
   open,
   onOpenChange,
   weekStart,
-  canShare,
 }: {
   event?: CalendarEventDef;
   defaultDay: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   weekStart: 0 | 6;
-  canShare: boolean;
 }) {
   const { t } = useTranslation();
   return (
@@ -490,7 +507,6 @@ export function EventDialog({
           defaultDay={defaultDay}
           onOpenChange={onOpenChange}
           weekStart={weekStart}
-          canShare={canShare}
         />
       </DialogContent>
     </Dialog>

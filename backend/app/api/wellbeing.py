@@ -1,7 +1,8 @@
 """Estado de ánimo y sesiones pomodoro."""
 
 from collections import Counter
-from datetime import datetime, time, timedelta
+from datetime import date, datetime, time, timedelta
+from statistics import mean
 
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
@@ -10,6 +11,7 @@ from ..extensions import db
 from ..models import MoodEntry, MoodKind, PomodoroSession, Project
 from ..openapi import doc
 from ..schemas import FocusIn, MoodIn, PomodoroIn
+from ..services.insights import MOOD_SCORE
 from ..utils import ApiError, check_ref, current_user, parse_body, today, utcnow
 
 bp = Blueprint("wellbeing", __name__, url_prefix="/api")
@@ -28,13 +30,39 @@ def list_moods():
         .order_by(MoodEntry.day)
     ).all()
     counts = Counter(e.mood.value for e in entries)
+    by_tag: dict[str, list[int]] = {}
+    for e in entries:
+        for tag in e.tags or []:
+            by_tag.setdefault(tag, []).append(MOOD_SCORE[e.mood.value])
     return jsonify(
         {
             "items": [e.to_dict() for e in entries],
             "counts": {k.value: counts.get(k.value, 0) for k in MoodKind},
             "today": next((e.to_dict() for e in entries if e.day == today()), None),
+            "stats": {
+                "logged_days": len(entries),
+                "streak": _streak({e.day for e in entries}),
+                "average": round(mean(MOOD_SCORE[e.mood.value] for e in entries), 2) if entries else None,
+                # Qué se repite en tus días buenos y malos: media de ánimo de los días con cada etiqueta.
+                "by_tag": sorted(
+                    ({"tag": t, "count": len(v), "average": round(mean(v), 2)} for t, v in by_tag.items()),
+                    key=lambda x: (-x["average"], -x["count"]),
+                ),
+            },
         }
     )
+
+
+def _streak(days: set) -> int:
+    """Días seguidos con ánimo registrado hasta hoy (si hoy aún no, se cuenta desde ayer)."""
+    cursor = today()
+    if cursor not in days:
+        cursor -= timedelta(days=1)
+    n = 0
+    while cursor in days:
+        n += 1
+        cursor -= timedelta(days=1)
+    return n
 
 
 @bp.put("/moods")
@@ -47,13 +75,31 @@ def set_mood():
     if day > today() + timedelta(days=1):  # margen de zona horaria
         raise ApiError("Cannot record a future day", 422, "validation_error")
     entry = db.session.scalar(db.select(MoodEntry).filter_by(user_id=user.id, day=day))
+    tags = list(dict.fromkeys(data.tags))
     if entry is None:
-        entry = MoodEntry(user_id=user.id, day=day, mood=MoodKind(data.mood), note=data.note)
+        entry = MoodEntry(user_id=user.id, day=day, mood=MoodKind(data.mood), note=data.note, tags=tags)
         db.session.add(entry)
-    else:
-        entry.mood, entry.note = MoodKind(data.mood), data.note
+    else:  # cambiar de opinión sobre un día ya registrado es normal: se reemplaza
+        entry.mood, entry.note, entry.tags = MoodKind(data.mood), data.note, tags
+    entry.updated_at = utcnow()
     db.session.commit()
     return jsonify(entry.to_dict())
+
+
+@bp.delete("/moods/<day>")
+@jwt_required()
+@doc("Delete the mood recorded for a day", "Mood")
+def delete_mood(day):
+    try:
+        when = date.fromisoformat(day)
+    except ValueError as exc:
+        raise ApiError("The day must be YYYY-MM-DD", 422, "validation_error") from exc
+    entry = db.session.scalar(db.select(MoodEntry).filter_by(user_id=current_user().id, day=when))
+    if entry is None:
+        raise ApiError("No mood recorded that day", 404, "not_found")
+    db.session.delete(entry)
+    db.session.commit()
+    return jsonify({"ok": True})
 
 
 # ---- pomodoro -----------------------------------------------------------------

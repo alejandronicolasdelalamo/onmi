@@ -4,6 +4,8 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
+  /* Tono del color de acento (0-360). Se cambia con data-accent en <html>. */
+  --hue: 277;
   --background: oklch(0.99 0.002 270);
   --foreground: oklch(0.2 0.02 270);
   --card: oklch(1 0 0);
@@ -12,14 +14,14 @@
   --muted-foreground: oklch(0.5 0.02 270);
   --border: oklch(0.92 0.008 270);
   --input: oklch(0.92 0.008 270);
-  --primary: oklch(0.55 0.22 277);
+  --primary: oklch(0.55 0.22 var(--hue));
   --primary-foreground: oklch(0.99 0 0);
-  --accent: oklch(0.95 0.025 277);
-  --accent-foreground: oklch(0.35 0.15 277);
+  --accent: oklch(0.95 0.025 var(--hue));
+  --accent-foreground: oklch(0.35 0.15 var(--hue));
   --destructive: oklch(0.58 0.22 25);
   --success: oklch(0.62 0.17 155);
   --warning: oklch(0.75 0.16 75);
-  --ring: oklch(0.55 0.22 277 / 0.5);
+  --ring: oklch(0.55 0.22 var(--hue) / 0.5);
   --sidebar: oklch(0.975 0.005 270);
   /* Texto sobre fondos tintados (badges): oscurecido para cumplir 4.5:1 */
   --danger-text: oklch(0.45 0.19 25);
@@ -40,15 +42,56 @@
   --muted-foreground: oklch(0.68 0.02 270);
   --border: oklch(0.3 0.02 270);
   --input: oklch(0.3 0.02 270);
-  --primary: oklch(0.68 0.19 277);
+  --primary: oklch(0.68 0.19 var(--hue));
   --primary-foreground: oklch(0.15 0.02 270);
-  --accent: oklch(0.28 0.05 277);
-  --accent-foreground: oklch(0.88 0.08 277);
+  --accent: oklch(0.28 0.05 var(--hue));
+  --accent-foreground: oklch(0.88 0.08 var(--hue));
   --destructive: oklch(0.68 0.2 25);
   --success: oklch(0.72 0.16 155);
   --warning: oklch(0.8 0.15 75);
-  --ring: oklch(0.68 0.19 277 / 0.5);
+  --ring: oklch(0.68 0.19 var(--hue) / 0.5);
   --sidebar: oklch(0.19 0.016 270);
+}
+
+/* Colores de acento (el usuario elige uno en Ajustes). */
+[data-accent="blue"] {
+  --hue: 250;
+}
+[data-accent="teal"] {
+  --hue: 195;
+}
+[data-accent="green"] {
+  --hue: 155;
+}
+[data-accent="amber"] {
+  --hue: 65;
+}
+[data-accent="rose"] {
+  --hue: 12;
+}
+[data-accent="pink"] {
+  --hue: 340;
+}
+
+/* Etiquetas con un color propio y estable (el tono sale del texto de la etiqueta). */
+.tag-chip {
+  background: oklch(0.94 0.05 var(--tag-hue));
+  color: oklch(0.38 0.13 var(--tag-hue));
+}
+.dark .tag-chip {
+  background: oklch(0.32 0.07 var(--tag-hue));
+  color: oklch(0.88 0.1 var(--tag-hue));
+}
+
+/* Medianoche: negro puro para pantallas OLED (el iPhone apaga los píxeles: menos batería). Va junto a .dark. */
+.midnight {
+  --background: oklch(0 0 0);
+  --card: oklch(0.15 0.01 270);
+  --card-foreground: oklch(0.96 0.005 270);
+  --muted: oklch(0.2 0.012 270);
+  --border: oklch(0.26 0.015 270);
+  --input: oklch(0.26 0.015 270);
+  --sidebar: oklch(0.1 0.008 270);
 }
 
 @theme inline {
@@ -169,6 +212,19 @@
     transform: translateX(0);
   }
 }
+@keyframes check-draw {
+  from {
+    stroke-dashoffset: 24;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes ring-fill {
+  from {
+    stroke-dashoffset: var(--ring-len);
+  }
+}
 @keyframes pop {
   0% {
     transform: scale(0.6);
@@ -184,6 +240,13 @@
 .animate-fade-up {
   animation: fade-up 0.35s ease-out both;
 }
+.animate-check {
+  stroke-dasharray: 24;
+  animation: check-draw 0.28s ease-out both;
+}
+.animate-ring {
+  animation: ring-fill 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
 .animate-pop {
   animation: pop 0.3s ease-out;
 }
@@ -196,4 +259,233 @@
 /* Modo enfoque del pomodoro: mientras está la pantalla de bloqueo no se muestran avisos de la app. */
 body[data-focus-lock="on"] [data-sonner-toaster] {
   display: none !important;
+}
+
+/* ---- Caritas de ánimo: animaciones (solo con data-animated="true"; quietas en listas) ---- */
+.mf * {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.mf[data-animated="false"] .mf-hearts,
+.mf[data-animated="false"] .mf-sparkles,
+.mf[data-animated="false"] .mf-steam {
+  display: none;
+}
+.mf[data-animated="true"] .mf-eyes {
+  animation: mf-blink 4.6s infinite;
+}
+.mf[data-animated="true"] .mf-body {
+  animation: mf-breathe 4s ease-in-out infinite;
+}
+.mf[data-animated="true"][data-mood="happy"] .mf-body {
+  animation: mf-bounce 1.6s ease-in-out infinite;
+}
+.mf[data-animated="true"][data-mood="mad"] .mf-body {
+  animation: mf-shake 3s ease-in-out infinite;
+}
+.mf[data-animated="true"][data-mood="sad"] .mf-body {
+  animation: mf-sway 5s ease-in-out infinite;
+}
+.mf[data-animated="true"] .mf-heartbeat {
+  animation: mf-beat 1.1s ease-in-out infinite;
+}
+.mf[data-animated="true"] .mf-look {
+  animation: mf-look 6s ease-in-out infinite;
+}
+.mf[data-animated="true"] .mf-tear {
+  animation: mf-tear 2.8s ease-in infinite;
+}
+.mf[data-animated="true"] .mf-steam {
+  animation: mf-steam 1.8s ease-out infinite;
+}
+.mf[data-animated="true"] .mf-h1 {
+  animation: mf-rise 2.6s ease-out infinite;
+}
+.mf[data-animated="true"] .mf-h2 {
+  animation: mf-rise 2.6s 1.2s ease-out infinite;
+}
+.mf[data-animated="true"] .mf-s1 {
+  animation: mf-twinkle 1.8s ease-in-out infinite;
+}
+.mf[data-animated="true"] .mf-s2 {
+  animation: mf-twinkle 1.8s 0.7s ease-in-out infinite;
+}
+@keyframes mf-blink {
+  0%,
+  93%,
+  100% {
+    transform: scaleY(1);
+  }
+  96% {
+    transform: scaleY(0.08);
+  }
+}
+@keyframes mf-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.035);
+  }
+}
+@keyframes mf-bounce {
+  0%,
+  100% {
+    transform: translateY(0) scale(1, 1);
+  }
+  45% {
+    transform: translateY(-2.2px) scale(0.98, 1.03);
+  }
+  60% {
+    transform: translateY(0) scale(1.03, 0.96);
+  }
+}
+@keyframes mf-shake {
+  0%,
+  70%,
+  100% {
+    transform: translateX(0);
+  }
+  74%,
+  82%,
+  90% {
+    transform: translateX(-1.2px) rotate(-1.5deg);
+  }
+  78%,
+  86%,
+  94% {
+    transform: translateX(1.2px) rotate(1.5deg);
+  }
+}
+@keyframes mf-sway {
+  0%,
+  100% {
+    transform: rotate(-1.5deg) translateY(0);
+  }
+  50% {
+    transform: rotate(1.5deg) translateY(0.6px);
+  }
+}
+@keyframes mf-beat {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  15% {
+    transform: scale(1.18);
+  }
+  30% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.12);
+  }
+}
+@keyframes mf-look {
+  0%,
+  35%,
+  100% {
+    transform: translateX(0);
+  }
+  45%,
+  60% {
+    transform: translateX(-1.4px);
+  }
+  70%,
+  85% {
+    transform: translateX(1.4px);
+  }
+}
+@keyframes mf-tear {
+  0% {
+    transform: translateY(-3px) scale(0.5);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    transform: translateY(9px) scale(1);
+    opacity: 0;
+  }
+}
+@keyframes mf-steam {
+  0% {
+    transform: translateY(2px);
+    opacity: 0;
+  }
+  40% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(-4px);
+    opacity: 0;
+  }
+}
+@keyframes mf-rise {
+  0% {
+    transform: translateY(4px) scale(0.6);
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-8px) scale(1.1);
+    opacity: 0;
+  }
+}
+@keyframes mf-twinkle {
+  0%,
+  100% {
+    transform: scale(0.4);
+    opacity: 0.2;
+  }
+  50% {
+    transform: scale(1.15) rotate(20deg);
+    opacity: 1;
+  }
+}
+
+.mf-particle {
+  width: 9px;
+  height: 9px;
+  margin: -4.5px 0 0 -4.5px;
+  border-radius: 9999px;
+  opacity: 0;
+  font-size: 15px;
+  line-height: 9px;
+  color: #f43f5e;
+  animation: mf-burst 0.85s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+  animation-delay: var(--delay, 0ms);
+}
+.mf-particle[data-mood="love"] {
+  width: auto;
+  height: auto;
+  border-radius: 0;
+}
+@keyframes mf-burst {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) scale(0.5);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(
+        calc(cos(var(--a)) * var(--d)),
+        calc(sin(var(--a)) * var(--d))
+      )
+      scale(1.15);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mf *,
+  .mf-particle {
+    animation: none !important;
+  }
+  .mf-particle {
+    display: none;
+  }
 }

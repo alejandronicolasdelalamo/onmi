@@ -29,13 +29,20 @@ class Config:
     # solos, así que no hay CSRF). Solo se entregan tokens en el cuerpo si el cliente los pide con `X-Client: mobile`.
     JWT_TOKEN_LOCATION = ["cookies", "headers"]
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=15)
-    JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=14)
+    # La sesión se renueva cada vez que se usa la app (ver /api/auth/refresh): solo se pierde tras 30 días sin entrar.
+    JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
+    # Cookies persistentes (con fecha de caducidad) y no "de sesión": así no se pierde la sesión al cerrar el navegador.
+    JWT_SESSION_COOKIE = False
     JWT_COOKIE_SECURE = False
     JWT_COOKIE_SAMESITE = "Lax"
     JWT_COOKIE_CSRF_PROTECT = True
     JWT_REFRESH_COOKIE_PATH = "/api/auth/refresh"
 
     FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+    # Passkeys (Face ID / Touch ID / llaves de seguridad). El RP ID debe ser el dominio de la web; por defecto sale de
+    # FRONTEND_URL. Cambiar de dominio invalida las passkeys ya creadas.
+    WEBAUTHN_RP_ID = os.getenv("WEBAUTHN_RP_ID", "")
+    WEBAUTHN_RP_NAME = os.getenv("WEBAUTHN_RP_NAME", "ONMi")
     CORS_ORIGINS = [o.strip() for o in os.getenv("CORS_ORIGINS", FRONTEND_URL).split(",")]
 
     SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY", "")
@@ -56,6 +63,8 @@ class Config:
     RATELIMIT_ENABLED = os.getenv("RATELIMIT_ENABLED", "true").lower() == "true"
     MAX_FAILED_LOGINS = 5
     LOCKOUT_MINUTES = 15
+    # Minutos que las notas ocultas siguen visibles tras introducir su contraseña.
+    NOTES_UNLOCK_MINUTES = 10
     REQUIRE_EMAIL_VERIFICATION = False
 
 

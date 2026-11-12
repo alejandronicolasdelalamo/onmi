@@ -12,9 +12,11 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Integer,
+    LargeBinary,
     String,
     Text,
     UniqueConstraint,
+    false,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -81,10 +83,16 @@ class User(db.Model):
     locked_until: Mapped[datetime | None] = mapped_column(DateTime)
     # Modo enfoque del pomodoro: hasta esta hora (UTC) ONMi no envía notificaciones push.
     focus_until: Mapped[datetime | None] = mapped_column(DateTime)
+    # Contraseña propia para las notas ocultas (distinta de la de la cuenta). Vacío = sin notas ocultas.
+    notes_lock_hash: Mapped[str | None] = mapped_column(String(255))
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime)
 
     notes: Mapped[list[Note]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    note_images: Mapped[list[NoteImage]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    sessions: Mapped[list[UserSession]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    passkeys: Mapped[list[Passkey]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    calendars: Mapped[list[Calendar]] = relationship(back_populates="user", cascade="all, delete-orphan")
     projects: Mapped[list[Project]] = relationship(back_populates="user", cascade="all, delete-orphan")
     goals: Mapped[list[Goal]] = relationship(back_populates="user", cascade="all, delete-orphan")
     habits: Mapped[list[Habit]] = relationship(back_populates="user", cascade="all, delete-orphan")
@@ -117,6 +125,12 @@ class User(db.Model):
     def check_password(self, password: str) -> bool:
         return bool(self.password_hash) and check_password_hash(self.password_hash, password)
 
+    def set_notes_lock(self, password: str) -> None:
+        self.notes_lock_hash = generate_password_hash(password)
+
+    def check_notes_lock(self, password: str) -> bool:
+        return bool(self.notes_lock_hash) and check_password_hash(self.notes_lock_hash, password)
+
     @property
     def is_locked(self) -> bool:
         return bool(self.locked_until and self.locked_until > _now())
@@ -139,6 +153,7 @@ class User(db.Model):
             "ai_coach_enabled": self.ai_coach_enabled,
             "focus_until": self.focus_until.isoformat() + "Z" if self.in_focus else None,
             "has_password": bool(self.password_hash),
+            "notes_lock_enabled": bool(self.notes_lock_hash),
             "created_at": self.created_at.isoformat(),
         }
 
@@ -241,11 +256,22 @@ class Goal(db.Model):
     project: Mapped[Project | None] = relationship(back_populates="goals")
     habits: Mapped[list[Habit]] = relationship(back_populates="goal")
     notes: Mapped[list[Note]] = relationship(back_populates="goal")
+    milestones: Mapped[list[GoalMilestone]] = relationship(
+        back_populates="goal", cascade="all, delete-orphan", order_by="GoalMilestone.position, GoalMilestone.id"
+    )
 
     def to_dict(self) -> dict:
+        done_ms = sum(1 for m in self.milestones if m.done)
         return {
             "id": self.id,
             "title": self.title,
+            "milestones": [m.to_dict() for m in self.milestones],
+            "milestones_done": done_ms,
+            # Lo que alimenta la meta: hábitos y notas (las ocultas o en la papelera no se nombran).
+            "linked": {
+                "habits": [{"id": h.id, "name": h.name} for h in self.habits if not h.archived],
+                "notes": [{"id": n.id, "title": n.title} for n in self.notes if not n.locked and n.deleted_at is None],
+            },
             "description": self.description,
             "done": self.done,
             "shared": self.shared,
@@ -254,6 +280,65 @@ class Goal(db.Model):
             "habit_ids": [h.id for h in self.habits],
             "completed_at": self.completed_at.isoformat() if self.completed_at else None,
             "created_at": self.created_at.isoformat(),
+        }
+
+
+class GoalMilestone(db.Model):
+    """Hito de una meta: un paso concreto que se marca como hecho."""
+
+    __tablename__ = "goal_milestones"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    goal_id: Mapped[int] = mapped_column(ForeignKey("goals.id", ondelete="CASCADE"), index=True)
+    title: Mapped[str] = mapped_column(String(160))
+    done: Mapped[bool] = mapped_column(Boolean, default=False)
+    position: Mapped[int] = mapped_column(Integer, default=0)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime)
+
+    goal: Mapped[Goal] = relationship(back_populates="milestones")
+
+    def to_dict(self) -> dict:
+        return {"id": self.id, "title": self.title, "done": self.done, "position": self.position}
+
+
+class UserSession(db.Model):
+    """Un dispositivo con la sesión iniciada. Permite verlas y cerrarlas una a una."""
+
+    __tablename__ = "user_sessions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    refresh_jti: Mapped[str | None] = mapped_column(String(64), index=True)
+    device: Mapped[str] = mapped_column(String(120), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+    last_used_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime)
+
+    user: Mapped[User] = relationship(back_populates="sessions")
+
+
+class Passkey(db.Model):
+    """Credencial WebAuthn (Face ID, Touch ID, llave de seguridad…) con la que se inicia sesión sin contraseña."""
+
+    __tablename__ = "passkeys"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    credential_id: Mapped[str] = mapped_column(String(512), unique=True, index=True)  # base64url
+    public_key: Mapped[bytes] = mapped_column(LargeBinary)
+    sign_count: Mapped[int] = mapped_column(Integer, default=0)
+    name: Mapped[str] = mapped_column(String(80), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+    last_used_at: Mapped[datetime | None] = mapped_column(DateTime)
+
+    user: Mapped[User] = relationship(back_populates="passkeys")
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "name": self.name,
+            "created_at": self.created_at.isoformat(),
+            "last_used_at": self.last_used_at.isoformat() if self.last_used_at else None,
         }
 
 
@@ -268,6 +353,10 @@ class Note(db.Model):
     content: Mapped[str] = mapped_column(Text, default="")
     tags: Mapped[list] = mapped_column(JSON, default=list)
     pinned: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Nota oculta: el servidor no da título, contenido ni etiquetas hasta desbloquearla con la contraseña de notas.
+    locked: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
+    # Papelera: una nota borrada se conserva 30 días (deleted_at) antes de eliminarse de verdad.
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=_now, onupdate=_now)
 
@@ -275,18 +364,38 @@ class Note(db.Model):
     project: Mapped[Project | None] = relationship(back_populates="notes")
     goal: Mapped[Goal | None] = relationship(back_populates="notes")
 
-    def to_dict(self) -> dict:
+    def to_dict(self, reveal: bool = False) -> dict:
+        """Una nota oculta solo muestra su contenido si `reveal` (el cliente presentó el desbloqueo vigente)."""
+        hidden = self.locked and not reveal
         return {
             "id": self.id,
-            "title": self.title,
-            "content": self.content,
-            "tags": self.tags or [],
+            "title": "" if hidden else self.title,
+            "content": "" if hidden else self.content,
+            "tags": [] if hidden else (self.tags or []),
             "pinned": self.pinned,
-            "project_id": self.project_id,
-            "goal_id": self.goal_id,
+            "locked": self.locked,
+            "deleted_at": self.deleted_at.isoformat() if self.deleted_at else None,
+            "project_id": None if hidden else self.project_id,
+            "goal_id": None if hidden else self.goal_id,
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),
         }
+
+
+class NoteImage(db.Model):
+    """Imagen pegada en una nota (ya reducida por el cliente). Se enlaza con la nota al guardarla."""
+
+    __tablename__ = "note_images"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    note_id: Mapped[int | None] = mapped_column(ForeignKey("notes.id", ondelete="SET NULL"), index=True)
+    mime: Mapped[str] = mapped_column(String(20))
+    size: Mapped[int] = mapped_column(Integer)
+    data: Mapped[bytes] = mapped_column(LargeBinary, deferred=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+
+    user: Mapped[User] = relationship(back_populates="note_images")
 
 
 class Habit(db.Model):
@@ -367,10 +476,20 @@ class MoodEntry(db.Model):
     day: Mapped[date] = mapped_column(Date)
     mood: Mapped[MoodKind]
     note: Mapped[str] = mapped_column(String(300), default="")
+    # Qué ha influido en el día (sueño, trabajo, familia…): sirve para ver qué te sube o te baja el ánimo.
+    tags: Mapped[list] = mapped_column(JSON, default=list, server_default="[]")
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime)
     user: Mapped[User] = relationship(back_populates="moods")
 
     def to_dict(self) -> dict:
-        return {"id": self.id, "date": self.day.isoformat(), "mood": self.mood.value, "note": self.note}
+        return {
+            "id": self.id,
+            "date": self.day.isoformat(),
+            "mood": self.mood.value,
+            "note": self.note,
+            "tags": self.tags or [],
+            "updated_at": self.updated_at.isoformat() + "Z" if self.updated_at else None,
+        }
 
 
 class PomodoroSession(db.Model):
@@ -493,11 +612,19 @@ class CalendarEvent(db.Model):
     per_week: Mapped[int | None] = mapped_column(Integer)
     every_weeks: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
     until: Mapped[date | None] = mapped_column(Date)
+    # Obsoleto: ahora se comparte por calendario (ver `Calendar`). Se conserva la columna por las migraciones antiguas.
     shared: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
+    calendar_id: Mapped[int | None] = mapped_column(ForeignKey("calendars.id", ondelete="CASCADE"), index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
 
     user: Mapped[User] = relationship(back_populates="calendar_events")
+    calendar: Mapped[Calendar | None] = relationship(back_populates="events")
     logs: Mapped[list[EventLog]] = relationship(back_populates="event", cascade="all, delete-orphan")
+
+    @property
+    def is_shared(self) -> bool:
+        """Un evento es visible para otros solo si su calendario tiene personas con quien se comparte."""
+        return bool(self.calendar and self.calendar.viewers)
 
     def weekday_list(self) -> list[int]:
         return sorted({int(x) for x in self.weekdays.split(",") if x.strip().isdigit() and 0 <= int(x) <= 6})
@@ -516,8 +643,41 @@ class CalendarEvent(db.Model):
             "per_week": self.per_week,
             "every_weeks": self.every_weeks,
             "until": self.until.isoformat() if self.until else None,
-            "shared": self.shared,
+            "calendar_id": self.calendar_id,
+            "shared": self.is_shared,
         }
+
+
+class Calendar(db.Model):
+    """Un calendario con nombre. El «Personal» (`is_default`) es siempre privado; los demás se comparten con las
+    personas que elijas (compañeros aceptados), cada uno con su propia lista."""
+
+    __tablename__ = "calendars"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    name: Mapped[str] = mapped_column(String(60))
+    color: Mapped[str] = mapped_column(String(7), default="#6366f1")
+    is_default: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+
+    user: Mapped[User] = relationship(back_populates="calendars")
+    events: Mapped[list[CalendarEvent]] = relationship(back_populates="calendar", cascade="all, delete-orphan")
+    viewers: Mapped[list[CalendarViewer]] = relationship(back_populates="calendar", cascade="all, delete-orphan")
+
+
+class CalendarViewer(db.Model):
+    """`viewer` puede ver los eventos (sin notas) de un calendario concreto."""
+
+    __tablename__ = "calendar_viewers"
+    __table_args__ = (UniqueConstraint("calendar_id", "viewer_id", name="uq_calendar_viewer"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    calendar_id: Mapped[int] = mapped_column(ForeignKey("calendars.id", ondelete="CASCADE"), index=True)
+    viewer_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+
+    calendar: Mapped[Calendar] = relationship(back_populates="viewers")
 
 
 class EventLog(db.Model):

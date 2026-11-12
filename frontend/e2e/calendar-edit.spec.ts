@@ -144,7 +144,7 @@ test.describe("calendario: editar lo que se acaba de crear", () => {
     expect(calls.filter((c) => !/-> 20\d/.test(c))).toEqual([]);
   });
 
-  test("un evento se puede mover de día, compartir y borrar tras crearlo", async ({
+  test("un evento se puede mover de día y borrar tras crearlo", async ({
     page,
   }) => {
     const calls = watchApi(page);
@@ -156,7 +156,6 @@ test.describe("calendario: editar lo que se acaba de crear", () => {
 
     dialog = await openEdit(page, "Reunión");
     await dialog.getByLabel("Date").fill("2026-11-20");
-    await dialog.getByRole("switch", { name: /share/i }).first().click();
     await save(page);
     await page.getByRole("button", { name: /^Today$/ }).click();
     // Ya no está en el día de hoy...

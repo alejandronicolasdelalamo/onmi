@@ -83,7 +83,8 @@ test.describe("calendario", () => {
   test("la cuenta demo no puede compartir su calendario", async ({ page }) => {
     await demo(page);
     await page.goto("/calendar");
-    await page.getByRole("button", { name: "Share", exact: true }).click();
+    await page.getByRole("button", { name: "Calendars", exact: true }).click();
+    await page.getByRole("button", { name: "New calendar" }).click();
     await expect(
       page.getByRole("dialog").getByText(/demo account is shared/),
     ).toBeVisible();
@@ -94,7 +95,8 @@ test.describe("calendario", () => {
   }) => {
     await demo(page);
     await page.goto("/calendar");
-    await expect(page.getByText("Sam Rivera").first()).toBeVisible();
+    await page.getByRole("button", { name: /Shared with me/ }).click();
+    await expect(page.getByText(/Sam Rivera/).first()).toBeVisible();
   });
 });
 

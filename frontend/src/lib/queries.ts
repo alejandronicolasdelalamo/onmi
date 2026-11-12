@@ -6,6 +6,7 @@ import {
 } from "@tanstack/react-query";
 import { api, qs } from "./api";
 import { celebrate, milestoneFor } from "./celebrate";
+import { useNotesUnlocked } from "./notes-lock";
 import { localISODate } from "./utils";
 import type {
   AdminMetrics,
@@ -15,18 +16,24 @@ import type {
   Habit,
   HeatmapData,
   Insights,
+  MoodEntry,
   MoodHistory,
   MoodKind,
   Note,
   BuddyProfile,
   CalendarData,
   CalendarEventDef,
-  CalendarSharing,
+  CalendarInfo,
+  CalendarsOverview,
+  ActivityItem,
   Paginated,
   PomodoroStats,
   SharedCalendars,
   Project,
+  ProjectActivityItem,
   ProjectStatus,
+  SearchResults,
+  SessionInfo,
 } from "./types";
 
 type List<T> = { items: T[] };
@@ -34,8 +41,10 @@ type List<T> = { items: T[] };
 export const keys = {
   dashboard: ["dashboard"] as const,
   insights: ["insights"] as const,
-  notes: (f?: object) => ["notes", f ?? {}] as const,
-  tags: ["notes", "tags"] as const,
+  // `unlocked` forma parte de la clave: al desbloquear o bloquear se piden de nuevo y no se mezclan cachés.
+  notes: (f: object | undefined, unlocked: boolean) =>
+    ["notes", f ?? {}, unlocked] as const,
+  tags: (unlocked: boolean) => ["notes", "tags", unlocked] as const,
   projects: ["projects"] as const,
   goals: ["goals"] as const,
   habits: ["habits"] as const,
@@ -83,24 +92,39 @@ export interface NoteFilters {
   tag?: string;
   pinned?: boolean;
   project_id?: number;
+  /** true = notas de la papelera. */
+  trash?: boolean;
 }
-export const useNotes = (filters: NoteFilters) =>
-  useQuery({
-    queryKey: keys.notes(filters),
+export const useNotes = (filters: NoteFilters) => {
+  const unlocked = useNotesUnlocked();
+  return useQuery({
+    queryKey: keys.notes(filters, unlocked),
     queryFn: async () =>
       (await api.get<List<Note>>(`/api/notes${qs({ ...filters })}`)).items,
     placeholderData: keepPreviousData,
   });
-export const useTags = () =>
-  useQuery({
-    queryKey: keys.tags,
+};
+export const useTags = () => {
+  const unlocked = useNotesUnlocked();
+  return useQuery({
+    queryKey: keys.tags(unlocked),
     queryFn: async () =>
       (await api.get<List<{ tag: string; count: number }>>("/api/notes/tags"))
         .items,
   });
+};
 
 export type NoteInput = Partial<
-  Pick<Note, "title" | "content" | "tags" | "pinned" | "project_id" | "goal_id">
+  Pick<
+    Note,
+    | "title"
+    | "content"
+    | "tags"
+    | "pinned"
+    | "locked"
+    | "project_id"
+    | "goal_id"
+  >
 >;
 const noteKeys = [["notes"], keys.dashboard] as const;
 export const useCreateNote = () =>
@@ -114,11 +138,37 @@ export const useUpdateNote = () =>
       api.patch<Note>(`/api/notes/${id}`, b),
     noteKeys,
   );
+/** Borra: una nota viva va a la papelera; una nota que ya está en la papelera se elimina para siempre. */
 export const useDeleteNote = () =>
   useInvalidatingMutation(
     (id: number) => api.delete(`/api/notes/${id}`),
     noteKeys,
   );
+export const useRestoreNote = () =>
+  useInvalidatingMutation(
+    (id: number) => api.post<Note>(`/api/notes/${id}/restore`),
+    noteKeys,
+  );
+export const useEmptyTrash = () =>
+  useInvalidatingMutation(
+    () => api.delete<{ removed: number; skipped: number }>("/api/notes/trash"),
+    noteKeys,
+  );
+
+export interface NoteLinks {
+  outgoing: { title: string; id: number | null }[];
+  backlinks: { id: number; title: string }[];
+}
+/** Notas citadas con [[título]] y notas que citan a esta. */
+export const useNoteLinks = (id: number | undefined) => {
+  const unlocked = useNotesUnlocked();
+  return useQuery({
+    queryKey: ["notes", "links", id, unlocked] as const,
+    queryFn: () => api.get<NoteLinks>(`/api/notes/${id}/links`),
+    enabled: id !== undefined,
+    retry: false,
+  });
+};
 
 // ---- projects ------------------------------------------------------------------
 export const useProjects = () =>
@@ -364,9 +414,17 @@ export const useMoods = (days = 30) =>
   });
 export const useSetMood = () =>
   useInvalidatingMutation(
-    (b: { mood: MoodKind; note?: string; date?: string }) =>
-      api.put("/api/moods", { ...b, date: b.date ?? localISODate() }),
-    [keys.moods, keys.dashboard, keys.insights],
+    (b: { mood: MoodKind; note?: string; tags?: string[]; date?: string }) =>
+      api.put<MoodEntry>("/api/moods", {
+        ...b,
+        date: b.date ?? localISODate(),
+      }),
+    [keys.moods, keys.dashboard, keys.insights, ["calendar"]],
+  );
+export const useDeleteMood = () =>
+  useInvalidatingMutation(
+    (date: string) => api.delete(`/api/moods/${date}`),
+    [keys.moods, keys.dashboard, keys.insights, ["calendar"]],
   );
 
 // ---- pomodoro ------------------------------------------------------------------
@@ -428,7 +486,7 @@ export const useBuddyProfile = (id: number) =>
   });
 
 // ---- calendario ----------------------------------------------------------------------
-export type EventInput = Omit<CalendarEventDef, "id">;
+export type EventInput = Omit<CalendarEventDef, "id" | "shared">;
 const calendarKey = ["calendar"] as const;
 
 export const useCalendar = (from: string, to: string) =>
@@ -446,10 +504,24 @@ export const useSharedCalendars = (from: string, to: string) =>
     placeholderData: keepPreviousData,
   });
 
-export const useCalendarSharing = () =>
+export const useCalendars = () =>
   useQuery({
-    queryKey: [...calendarKey, "sharing"],
-    queryFn: () => api.get<CalendarSharing>("/api/calendar/sharing"),
+    queryKey: [...calendarKey, "calendars"],
+    queryFn: () => api.get<CalendarsOverview>("/api/calendar/calendars"),
+  });
+
+/** Datos de ONMi sobre el calendario (hábitos, metas, ánimo, enfoque…): privados, solo para quien los ve. */
+export const useCalendarActivity = (from: string, to: string, enabled = true) =>
+  useQuery({
+    queryKey: [...calendarKey, "activity", from, to],
+    queryFn: async () =>
+      (
+        await api.get<{ items: ActivityItem[] }>(
+          `/api/calendar/activity${qs({ from, to })}`,
+        )
+      ).items,
+    enabled,
+    placeholderData: keepPreviousData,
   });
 
 export const useCreateEvent = () =>
@@ -476,8 +548,117 @@ export const useMarkDay = () =>
       }),
     [calendarKey],
   );
-export const useSetCalendarSharing = () =>
+export interface CalendarBody {
+  name: string;
+  color: string;
+  user_ids: number[];
+}
+export const useCreateCalendar = () =>
   useInvalidatingMutation(
-    (user_ids: number[]) => api.put("/api/calendar/sharing", { user_ids }),
+    (b: CalendarBody) => api.post<CalendarInfo>("/api/calendar/calendars", b),
     [calendarKey],
   );
+export const useUpdateCalendar = () =>
+  useInvalidatingMutation(
+    ({ id, ...b }: Partial<CalendarBody> & { id: number }) =>
+      api.patch<CalendarInfo>(`/api/calendar/calendars/${id}`, b),
+    [calendarKey],
+  );
+export const useDeleteCalendar = () =>
+  useInvalidatingMutation(
+    (id: number) =>
+      api.delete<{ ok: true; moved_events: number }>(
+        `/api/calendar/calendars/${id}`,
+      ),
+    [calendarKey],
+  );
+
+// ---- hitos de metas ------------------------------------------------------------------
+const milestoneKeys = [keys.goals, keys.dashboard] as const;
+export const useAddMilestone = () =>
+  useInvalidatingMutation(
+    ({ goalId, title }: { goalId: number; title: string }) =>
+      api.post<Goal>(`/api/goals/${goalId}/milestones`, { title }),
+    milestoneKeys,
+  );
+/** Marcar un hito responde al instante (actualización optimista); el servidor confirma después. */
+export function useUpdateMilestone() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      ...b
+    }: {
+      id: number;
+      done?: boolean;
+      title?: string;
+    }) => api.patch<Goal>(`/api/goals/milestones/${id}`, b),
+    onMutate: async ({ id, done }) => {
+      await qc.cancelQueries({ queryKey: keys.goals });
+      const previous = qc.getQueriesData<Goal[]>({ queryKey: keys.goals });
+      if (done !== undefined)
+        qc.setQueriesData<Goal[]>({ queryKey: keys.goals }, (old) =>
+          old?.map((g) => {
+            if (!g.milestones.some((m) => m.id === id)) return g;
+            const milestones = g.milestones.map((m) =>
+              m.id === id ? { ...m, done } : m,
+            );
+            return {
+              ...g,
+              milestones,
+              milestones_done: milestones.filter((m) => m.done).length,
+            };
+          }),
+        );
+      return { previous };
+    },
+    onError: (_e, _v, ctx) =>
+      ctx?.previous.forEach(([key, data]) => qc.setQueryData(key, data)),
+    onSettled: () => {
+      for (const key of milestoneKeys)
+        void qc.invalidateQueries({ queryKey: key });
+    },
+  });
+}
+export const useDeleteMilestone = () =>
+  useInvalidatingMutation(
+    (id: number) => api.delete<Goal>(`/api/goals/milestones/${id}`),
+    milestoneKeys,
+  );
+
+// ---- actividad de proyectos ----------------------------------------------------------
+export const useProjectActivity = (id: number) =>
+  useQuery({
+    queryKey: [...keys.projects, "activity", id] as const,
+    queryFn: async () =>
+      (await api.get<List<ProjectActivityItem>>(`/api/projects/${id}/activity`))
+        .items,
+  });
+
+// ---- sesiones activas -----------------------------------------------------------------
+const sessionsKey = ["sessions"] as const;
+export const useSessions = () =>
+  useQuery({
+    queryKey: sessionsKey,
+    queryFn: async () =>
+      (await api.get<List<SessionInfo>>("/api/auth/sessions")).items,
+  });
+export const useRevokeSession = () =>
+  useInvalidatingMutation(
+    (id: number) => api.delete(`/api/auth/sessions/${id}`),
+    [sessionsKey],
+  );
+export const useRevokeOtherSessions = () =>
+  useInvalidatingMutation(
+    () => api.delete<{ revoked: number }>("/api/auth/sessions"),
+    [sessionsKey],
+  );
+
+// ---- búsqueda global ------------------------------------------------------------------
+export const useSearch = (q: string) =>
+  useQuery({
+    queryKey: ["search", q] as const,
+    queryFn: () => api.get<SearchResults>(`/api/search${qs({ q })}`),
+    enabled: q.trim().length >= 2,
+    staleTime: 30_000,
+  });

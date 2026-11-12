@@ -42,7 +42,14 @@ describe("GettingStarted", () => {
     renderIt({
       ...empty,
       habits: { ...empty.habits, total: 2 },
-      mood_today: { id: 1, date: "2025-01-01", mood: "happy", note: "" },
+      mood_today: {
+        id: 1,
+        date: "2025-01-01",
+        mood: "happy",
+        note: "",
+        tags: [],
+        updated_at: null,
+      },
     });
     expect(screen.getByRole("progressbar")).toHaveAttribute(
       "aria-valuenow",
@@ -62,6 +69,8 @@ describe("GettingStarted", () => {
           content: "",
           tags: [],
           pinned: false,
+          locked: false,
+          deleted_at: null,
           project_id: null,
           goal_id: null,
           created_at: "",
@@ -69,7 +78,14 @@ describe("GettingStarted", () => {
         },
       ],
       goals: [],
-      mood_today: { id: 1, date: "2025-01-01", mood: "happy", note: "" },
+      mood_today: {
+        id: 1,
+        date: "2025-01-01",
+        mood: "happy",
+        note: "",
+        tags: [],
+        updated_at: null,
+      },
       focus_minutes_today: 0,
     });
     expect(container).toBeEmptyDOMElement();

@@ -7,8 +7,9 @@ from datetime import datetime, time, timedelta
 
 from ..extensions import db
 from ..models import (
+    Calendar,
     CalendarEvent,
-    CalendarShare,
+    CalendarViewer,
     Cheer,
     Friendship,
     Goal,
@@ -24,6 +25,7 @@ from ..models import (
     User,
 )
 from ..utils import today, utcnow
+from . import calendars as cals
 
 DEMO_EMAIL = "demo@onmi.app"
 SAM_EMAIL = "sam@demo.onmi.app"
@@ -275,12 +277,13 @@ def _seed_buddy(user: User, demo_habits: dict[str, Habit], rng: random.Random, t
 
 def _seed_calendar(user: User, sam: User, t) -> None:
     """Calendario de ejemplo: un evento por cada tipo de repetición; Sam comparte el suyo con el demo."""
-    _seed_my_events(user, t)
+    _seed_my_events(user, t, sam)
     _seed_sam_calendar(user, sam, t)
-    db.session.add(CalendarShare(owner_id=sam.id, viewer_id=user.id))
 
 
-def _seed_my_events(user: User, t) -> None:
+def _seed_my_events(user: User, t, sam: User | None = None) -> None:
+    personal = cals.ensure_personal(user)
+    with_sam = cals.create_calendar(user, "With Sam", "#14b8a6", [sam.id] if sam else [])
     monday = t - timedelta(days=t.weekday())
     mine = [
         ("Deep work", "#6366f1", "09:00", 60, "daily", "", None, True),
@@ -300,13 +303,15 @@ def _seed_my_events(user: User, t) -> None:
                 repeat=repeat,
                 weekdays=days,
                 per_week=per_week,
-                shared=shared,
+                calendar=with_sam if shared else personal,
             )
         )
 
 
 def _seed_sam_calendar(user: User, sam: User, t) -> None:
     monday = t - timedelta(days=t.weekday())
+    sam_personal = cals.ensure_personal(sam)
+    running = cals.create_calendar(sam, "Running", "#f97316", [user.id])
     db.session.add(
         CalendarEvent(
             user_id=sam.id,
@@ -317,7 +322,7 @@ def _seed_sam_calendar(user: User, sam: User, t) -> None:
             duration_min=90,
             repeat="weekdays",
             weekdays="5",
-            shared=True,
+            calendar=running,
         )
     )
     db.session.add(
@@ -328,7 +333,7 @@ def _seed_sam_calendar(user: User, sam: User, t) -> None:
             start_date=t,
             start_time="17:00",
             duration_min=50,
-            shared=False,
+            calendar=sam_personal,
         )
     )
 
@@ -354,15 +359,22 @@ def _ensure_demo_calendar(user: User) -> None:
     t = today()
     changed = False
     if not db.session.scalar(db.select(db.func.count(CalendarEvent.id)).filter_by(user_id=user.id)):
-        _seed_my_events(user, t)
+        sam = db.session.scalar(db.select(User).filter_by(email=SAM_EMAIL))
+        _seed_my_events(user, t, sam)
         changed = True
     sam = db.session.scalar(db.select(User).filter_by(email=SAM_EMAIL))
     if sam is not None:
         if not db.session.scalar(db.select(db.func.count(CalendarEvent.id)).filter_by(user_id=sam.id)):
             _seed_sam_calendar(user, sam, t)
             changed = True
-        if not db.session.scalar(db.select(CalendarShare.id).filter_by(owner_id=sam.id, viewer_id=user.id)):
-            db.session.add(CalendarShare(owner_id=sam.id, viewer_id=user.id))
-            changed = True
+        elif not db.session.scalar(
+            db.select(CalendarViewer.id)
+            .join(Calendar, Calendar.id == CalendarViewer.calendar_id)
+            .where(Calendar.user_id == sam.id, CalendarViewer.viewer_id == user.id)
+        ):
+            running = db.session.scalar(db.select(Calendar).filter_by(user_id=sam.id, name="Running"))
+            if running is not None:
+                db.session.add(CalendarViewer(calendar_id=running.id, viewer_id=user.id))
+                changed = True
     if changed:
         db.session.commit()

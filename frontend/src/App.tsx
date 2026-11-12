@@ -11,6 +11,8 @@ import {
 import { AppShell } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/card";
+import { BootLoader } from "@/components/boot-loader";
+import { QueryError } from "@/components/query-error";
 import { useAuth } from "@/lib/auth";
 import { DashboardPage } from "@/features/dashboard/dashboard-page";
 import {
@@ -101,9 +103,17 @@ function lockedFocusPending() {
 }
 
 function RequireAuth({ children }: { children: ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading, sessionError, retrySession } = useAuth();
   const { pathname } = useLocation();
-  if (loading) return <FullScreenLoader />;
+  if (loading) return <BootLoader />;
+  if (!user && sessionError)
+    return (
+      <div className="grid min-h-dvh place-items-center p-6">
+        <div className="w-full max-w-md">
+          <QueryError error={sessionError} onRetry={retrySession} />
+        </div>
+      </div>
+    );
   if (!user) return <Navigate to="/login" replace />;
   if (pathname !== "/focus" && lockedFocusPending())
     return <Navigate to="/focus" replace />;
@@ -117,7 +127,7 @@ function RequireAdmin({ children }: { children: ReactNode }) {
 
 function GuestOnly({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
-  if (loading) return <FullScreenLoader />;
+  if (loading) return <BootLoader />;
   return user ? <Navigate to="/" replace /> : children;
 }
 

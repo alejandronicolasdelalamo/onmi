@@ -574,6 +574,7 @@ export function HabitsPage() {
       ) : (
         <Card>
           <EmptyState
+            art="habits"
             icon={<CalendarCheck />}
             title={t("habits.empty")}
             description={t("habits.emptyDesc")}

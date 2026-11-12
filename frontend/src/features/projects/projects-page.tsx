@@ -57,6 +57,7 @@ import type { Priority, Project, ProjectStatus } from "@/lib/types";
 import { cn, localISODate } from "@/lib/utils";
 
 import { QueryError } from "@/components/query-error";
+import { ProjectActivity } from "./project-activity";
 import { formatDate } from "@/lib/format";
 const COLUMNS: ProjectStatus[] = ["todo", "in_progress", "done"];
 const PRIORITY_TONE: Record<Priority, "neutral" | "warning" | "danger"> = {
@@ -457,6 +458,7 @@ function ProjectDialog({
             </Field>
           </div>
           {project && <ProjectGoals project={project} />}
+          {project && <ProjectActivity id={project.id} />}
           <DialogFooter className="sm:justify-between">
             {project ? (
               <Button
@@ -619,6 +621,7 @@ export function ProjectsPage() {
       ) : (
         <Card>
           <EmptyState
+            art="projects"
             icon={<FolderKanban />}
             title={t("projects.empty")}
             description={t("projects.emptyDesc")}

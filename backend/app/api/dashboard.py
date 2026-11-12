@@ -37,7 +37,10 @@ def summary():
     )
 
     notes = db.session.scalars(
-        db.select(Note).filter_by(user_id=user.id).order_by(Note.pinned.desc(), Note.updated_at.desc()).limit(4)
+        db.select(Note)
+        .filter_by(user_id=user.id, locked=False, deleted_at=None)
+        .order_by(Note.pinned.desc(), Note.updated_at.desc())
+        .limit(4)
     ).all()
     goals = db.session.scalars(
         db.select(Goal).filter_by(user_id=user.id, done=False).order_by(Goal.due_date.is_(None), Goal.due_date).limit(4)

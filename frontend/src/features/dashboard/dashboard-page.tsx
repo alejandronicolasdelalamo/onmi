@@ -19,6 +19,9 @@ import { cn, localISODate } from "@/lib/utils";
 
 import { QueryError } from "@/components/query-error";
 import { GettingStarted } from "./getting-started";
+import { InstallBanner } from "@/components/install-guide";
+import { TodayCard } from "./today-card";
+import { haptic } from "@/lib/haptics";
 import { formatDate } from "@/lib/format";
 function greetingKey() {
   const h = new Date().getHours();
@@ -84,6 +87,8 @@ export function DashboardPage() {
       ) : (
         <div className="space-y-6">
           {!user?.is_demo && <GettingStarted data={data} />}
+          <InstallBanner />
+          <TodayCard data={data} today={today} />
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             <Stat
               label={t("dashboard.habitsToday")}
@@ -146,6 +151,7 @@ export function DashboardPage() {
               <CardContent className="space-y-2">
                 {data.habits.today.length === 0 ? (
                   <EmptyState
+                    art="habits"
                     title={t("dashboard.noHabits")}
                     action={
                       <Button asChild size="sm">
@@ -159,7 +165,10 @@ export function DashboardPage() {
                     return (
                       <button
                         key={h.id}
-                        onClick={() => toggle.mutate({ id: h.id })}
+                        onClick={() => {
+                          haptic();
+                          toggle.mutate({ id: h.id });
+                        }}
                         aria-pressed={done}
                         className="flex w-full cursor-pointer items-center gap-3 rounded-md border border-border px-3 py-2.5 text-left transition-colors hover:bg-muted"
                       >
@@ -182,6 +191,7 @@ export function DashboardPage() {
                               strokeWidth="2.2"
                             >
                               <path
+                                className="animate-check"
                                 d="M2.5 6.5l2.2 2.2L9.5 3.8"
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
@@ -240,7 +250,10 @@ export function DashboardPage() {
               </CardHeader>
               <CardContent className="space-y-3">
                 {data.projects.active.length === 0 ? (
-                  <EmptyState title={t("dashboard.noProjects")} />
+                  <EmptyState
+                    art="projects"
+                    title={t("dashboard.noProjects")}
+                  />
                 ) : (
                   data.projects.active.map((p) => (
                     <div key={p.id} className="space-y-1.5">

@@ -1,4 +1,5 @@
 import type { HTMLAttributes } from "react";
+import { Illustration, type ArtName } from "@/components/illustrations";
 import { cn } from "@/lib/utils";
 
 export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
@@ -87,12 +88,15 @@ export function Badge({
 }
 
 export function EmptyState({
+  art,
   icon,
   title,
   description,
   action,
   className,
 }: {
+  /** Ilustración propia (tiene prioridad sobre `icon`). */
+  art?: ArtName;
   icon?: React.ReactNode;
   title: string;
   description?: string;
@@ -106,10 +110,14 @@ export function EmptyState({
         className,
       )}
     >
-      {icon && (
-        <div className="mb-1 rounded-full bg-muted p-3 text-muted-foreground [&_svg]:size-6">
-          {icon}
-        </div>
+      {art ? (
+        <Illustration name={art} className="mb-2" />
+      ) : (
+        icon && (
+          <div className="mb-1 rounded-full bg-muted p-3 text-muted-foreground [&_svg]:size-6">
+            {icon}
+          </div>
+        )
       )}
       <p className="font-medium">{title}</p>
       {description && (

@@ -15,6 +15,16 @@ export default defineConfig({
     baseURL: `http://localhost:${WEB_PORT}`,
     trace: "retain-on-failure",
     locale: "en-US",
+    // La bienvenida de las cuentas nuevas ya está vista (los tests de la bienvenida lo anulan).
+    storageState: {
+      cookies: [],
+      origins: [
+        {
+          origin: `http://localhost:${WEB_PORT}`,
+          localStorage: [{ name: "onmi.welcomed", value: "1" }],
+        },
+      ],
+    },
   },
   projects: [
     {

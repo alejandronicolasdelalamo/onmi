@@ -24,7 +24,19 @@
     "theme": "Theme",
     "light": "Light",
     "dark": "Dark",
-    "system": "System"
+    "system": "System",
+    "midnight": "Midnight",
+    "midnightHint": "Pure black: saves battery on OLED screens like the iPhone's.",
+    "accent": "Accent color",
+    "accents": {
+      "indigo": "Indigo",
+      "blue": "Blue",
+      "teal": "Teal",
+      "green": "Green",
+      "amber": "Amber",
+      "rose": "Rose",
+      "pink": "Pink"
+    }
   },
   "nav": {
     "dashboard": "Home",
@@ -83,7 +95,8 @@
     "backToSignIn": "Back to sign in",
     "showPassword": "Show password",
     "hidePassword": "Hide password",
-    "verifyDismiss": "Not now"
+    "verifyDismiss": "Not now",
+    "passkey": "Sign in with a passkey"
   },
   "dashboard": {
     "morning": "Good morning",
@@ -160,7 +173,7 @@
     "edit": "Edit note",
     "titleLabel": "Title",
     "content": "Content",
-    "contentPlaceholder": "Write something… Markdown is supported.",
+    "contentPlaceholder": "Write something… Markdown is supported. Link notes with [[title]].",
     "tags": "Tags",
     "tagsPlaceholder": "Type a tag and press Enter",
     "pin": "Pin",
@@ -177,7 +190,93 @@
     "deleteTitle": "Delete “{{name}}”?",
     "updated": "Updated {{date}}",
     "nothingToPreview": "Nothing to preview yet.",
-    "deleteDesc": "The note will be removed permanently."
+    "deleteDesc": "The note goes to the trash and is deleted for good after 30 days. You can restore it from there.",
+    "lock": {
+      "setupCta": "Hide notes",
+      "unlock": "Unlock hidden notes",
+      "lockNow": "Lock now",
+      "locked": "Hidden notes are locked",
+      "unlocked": "Hidden notes unlocked for a few minutes",
+      "setupDone": "Notes password set",
+      "changed": "Notes password changed",
+      "removed": "Notes password removed. Your notes are visible again.",
+      "hideNote": "Hide this note with the notes password",
+      "showNote": "This note is hidden. Click to show it again.",
+      "hiddenNote": "Hidden note",
+      "unlockToView": "Unlock to view",
+      "password": "Notes password",
+      "repeat": "Repeat password",
+      "current": "Current password",
+      "currentHint": "Your notes password, or your account password if you forgot it.",
+      "newPassword": "New password",
+      "tooShort": "Use at least {{n}} characters.",
+      "mismatch": "The passwords do not match.",
+      "wrong": "Incorrect password.",
+      "manageTitle": "Notes password",
+      "setupTitle": "Hide notes with a password",
+      "setupDesc": "Choose a password just for your hidden notes (separate from your account password). Hidden notes show no title or content until you enter it.",
+      "setupSubmit": "Save password",
+      "unlockTitle": "Unlock hidden notes",
+      "unlockDesc": "They stay visible for a few minutes, until you lock them or reload the page.",
+      "unlockSubmit": "Unlock",
+      "changeTitle": "Change notes password",
+      "changeDesc": "Hidden notes stay hidden; only the password changes.",
+      "changeSubmit": "Change password",
+      "removeTitle": "Remove notes password",
+      "removeDesc": "Every hidden note will become a normal note again.",
+      "removeSubmit": "Remove password",
+      "prefsTitle": "On this device",
+      "lockOnLeave": "Lock when I leave the app",
+      "lockOnLeaveHint": "On iPhone: when you switch apps or turn off the screen.",
+      "idle": "Lock after no activity",
+      "idleOption": "{{n}} min",
+      "maxHint": "Hidden notes always lock after 10 minutes.",
+      "askEachTime": "Ask for the password every time I open a hidden note",
+      "askEachTimeHint": "The list never shows them; each note opens with its own password."
+    },
+    "saveFirst": "Save your changes before opening another note.",
+    "templates": {
+      "label": "Start from a template",
+      "journal": "Daily journal",
+      "journalTitle": "Journal – {{date}}",
+      "journalBody": "## How was today?\n\n\n## What went well\n\n- \n\n## To improve tomorrow\n\n- \n",
+      "meeting": "Meeting",
+      "meetingTitle": "Meeting – {{date}}",
+      "meetingBody": "**Attendees:** \n\n## Agenda\n\n- \n\n## Notes\n\n\n## Action items\n\n- [ ] \n",
+      "checklist": "Checklist",
+      "checklistTitle": "Checklist",
+      "checklistBody": "- [ ] \n- [ ] \n- [ ] \n"
+    },
+    "links": {
+      "title": "Linked notes",
+      "outgoing": "Links to",
+      "backlinks": "Mentioned in",
+      "unresolved": "No note has this title yet"
+    },
+    "image": {
+      "add": "Add image",
+      "failed": "Could not add the image.",
+      "unavailable": "Image unavailable"
+    },
+    "trash": {
+      "tab": "Trash",
+      "tabNotes": "Notes",
+      "info": "Deleted notes stay here for 30 days and are then removed for good.",
+      "empty": "Empty trash",
+      "emptyTitle": "The trash is empty.",
+      "emptyDesc": "Notes you delete will wait here for 30 days.",
+      "emptyConfirmTitle": "Empty the trash?",
+      "emptyConfirmDesc": "Every note in the trash will be deleted for good. This cannot be undone.",
+      "skippedHidden": "{{n}} hidden notes were kept. Unlock your notes to remove them.",
+      "restore": "Restore",
+      "restored": "Note restored",
+      "forever": "Delete forever",
+      "foreverTitle": "Delete this note forever?",
+      "foreverDesc": "This cannot be undone.",
+      "deletedOn": "Deleted {{date}}",
+      "moved": "Moved to the trash",
+      "undo": "Undo"
+    }
   },
   "projects": {
     "title": "Projects",
@@ -210,7 +309,13 @@
     "addGoal": "Add a goal",
     "noGoals": "No goals yet.",
     "empty": "No projects yet.",
-    "emptyDesc": "Create a project to start planning."
+    "emptyDesc": "Create a project to start planning.",
+    "activity": "Recent activity",
+    "activityKinds": {
+      "goal_created": "Goal added:",
+      "goal_done": "Goal completed:",
+      "note": "Note updated:"
+    }
   },
   "goals": {
     "title": "Goals",
@@ -232,12 +337,16 @@
     "share": "Show to my buddies",
     "shareHint": "They will see this goal's title, due date and whether it is done. Never the description.",
     "sharedBadge": "Shared",
-    "privateBadge": "Private"
+    "privateBadge": "Private",
+    "milestones": "Milestones",
+    "milestonePlaceholder": "Add a step…",
+    "addMilestone": "Add milestone",
+    "fedBy": "Fed by"
   },
   "mood": {
     "title": "Mood",
-    "subtitle": "Check in with yourself every day.",
-    "prompt": "How are you feeling today?",
+    "subtitle": "Check in with yourself, change it whenever you feel differently, and look back over time.",
+    "prompt": "How are you feeling?",
     "notePlaceholder": "Add a note (optional)",
     "save": "Save mood",
     "saved": "Mood saved",
@@ -251,7 +360,53 @@
       "sad": "Sad"
     },
     "empty": "No entries yet.",
-    "entries": "{{count}} entries"
+    "entries": "{{count}} entries",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "prevDay": "Previous day",
+    "nextDay": "Next day",
+    "backToToday": "Back to today",
+    "notLogged": "Not logged yet",
+    "loggedAt": "Logged {{time}}",
+    "changedFrom": "Changing from {{from}}",
+    "pick": "Pick the face that fits",
+    "influences": "What influenced your day?",
+    "influencesHint": "Up to {{max}}. It helps you see what lifts you or weighs on you.",
+    "tags": {
+      "sleep": "Sleep",
+      "work": "Work",
+      "study": "Study",
+      "family": "Family",
+      "friends": "Friends",
+      "partner": "Partner",
+      "exercise": "Exercise",
+      "health": "Health",
+      "food": "Food",
+      "weather": "Weather",
+      "money": "Money",
+      "hobby": "Hobbies"
+    },
+    "update": "Update mood",
+    "updated": "Mood updated",
+    "delete": "Delete entry",
+    "deleteTitle": "Delete this entry?",
+    "deleteDesc": "The mood, note and tags of that day will be removed.",
+    "deleted": "Entry deleted",
+    "statsTitle": "Last 30 days",
+    "streak_one": "{{count}} day in a row",
+    "streak_other": "{{count}} days in a row",
+    "streakLabel": "Streak",
+    "average": "Average",
+    "logged": "Logged days",
+    "lifts": "What lifts you",
+    "weighs": "What weighs on you",
+    "needMore": "Log a few more days with tags to see what affects you.",
+    "calendar": "Calendar",
+    "prevMonth": "Previous month",
+    "nextMonth": "Next month",
+    "timeline": "Recent entries",
+    "edit": "Edit",
+    "noNote": "No note"
   },
   "pomodoro": {
     "title": "Focus",
@@ -388,7 +543,8 @@
     "newGoal": "New goal",
     "toggleTheme": "Toggle theme",
     "switchLanguage": "Switch language",
-    "open": "Quick actions"
+    "open": "Quick actions",
+    "results": "Results"
   },
   "errors": {
     "generic": "Something went wrong. Please try again.",
@@ -415,7 +571,15 @@
     "already_connected": "You are already buddies.",
     "already_pending": "Your request is already waiting for an answer.",
     "already_cheered": "You already cheered this buddy today. Come back tomorrow.",
-    "invalid_range": "That date range is not valid."
+    "invalid_range": "That date range is not valid.",
+    "notes_locked": "Your hidden notes locked again. Unlock them and try once more.",
+    "no_notes_password": "Set a notes password first.",
+    "image_too_large": "That image is too large.",
+    "invalid_image": "That file is not a supported image.",
+    "image_quota": "You have reached the image storage limit.",
+    "passkey_expired": "The passkey request expired. Please try again.",
+    "passkey_invalid": "We could not verify that passkey.",
+    "passkey_exists": "That passkey is already registered."
   },
   "notFound": {
     "title": "Page not found",
@@ -637,6 +801,167 @@
     "sharingDesc": "Choose which buddies can see your calendar.",
     "sharingPrivacy": "They only see events you mark as shared, and never your notes. You can stop at any time.",
     "sharingSaved": "Sharing updated",
-    "noBuddies": "You have no buddies yet. Add one in"
+    "noBuddies": "You have no buddies yet. Add one in",
+    "personal": "Personal",
+    "calendars": "Calendars",
+    "calendarsTitle": "My calendars",
+    "calendarsDesc": "Create as many calendars as you want and choose, for each one, who can see it. Your Personal calendar is always private.",
+    "newCalendar": "New calendar",
+    "editCalendar": "Edit calendar",
+    "calendarName": "Name",
+    "calendarNamePlaceholder": "Family, Work, Running club…",
+    "shareWith": "Share with",
+    "sharedWithNobody": "Private: only you can see it",
+    "sharedWithN_other": "Shared with {{count}} people",
+    "calendarSaved": "Calendar saved",
+    "personalNote": "Your Personal calendar and all your ONMi data (habits, goals, mood, focus) are private and are never shared.",
+    "deleteCalendarTitle": "Delete “{{name}}”?",
+    "deleteCalendarDesc": "Its events are not lost: they move to your Personal calendar (private).",
+    "scope": "Which calendars",
+    "scope_mine": "Mine",
+    "scope_shared": "Shared with me",
+    "myCalendars": "My calendars",
+    "myData": "My data (private)",
+    "noSharedCalendars": "Nobody is sharing a calendar with you yet. When a buddy shares one, it will appear here.",
+    "calendarField": "Calendar",
+    "eventPrivate": "Private: only you can see this event.",
+    "eventVisibleTo": "Visible to {{names}}: title, time and whether it is done. Notes are never shared.",
+    "layers": {
+      "habits": "Habits",
+      "goals": "Goals",
+      "projects": "Projects",
+      "mood": "Mood",
+      "focus": "Focus"
+    },
+    "layerHabits_other": "{{count}} habits done: {{names}}",
+    "layerFocus": "{{count}} min of focus",
+    "sharedWithN_one": "Shared with {{count}} person",
+    "layerHabits_one": "{{count}} habit done: {{names}}"
+  },
+  "boot": {
+    "title": "Starting ONMi",
+    "seconds": "sec left, approx.",
+    "tip": "Tip:",
+    "phase": {
+      "wake": "Waking up the server…",
+      "start": "Starting the app…",
+      "connect": "Connecting to your data…",
+      "almost": "Almost there…",
+      "slow": "Taking a bit longer than usual"
+    },
+    "why": "Free servers go to sleep when nobody uses them. The first visit after a while takes about a minute; after that everything is instant.",
+    "slow": "Still working on it. Keep this page open: it will continue by itself as soon as the server is ready.",
+    "tip1": "link notes to each other by typing [[title]].",
+    "tip2": "hide private notes with their own password.",
+    "tip3": "install ONMi on your home screen from Safari's Share menu.",
+    "tip4": "pull your day together from the Home screen: habits, events and goals."
+  },
+  "today": {
+    "title": "Today",
+    "habits": "Habits",
+    "focus": "Focus",
+    "mood": "Mood",
+    "logged": "logged",
+    "notYet": "not yet",
+    "next": "Up next",
+    "nextHabit": "Mark “{{name}}” as done",
+    "markDone": "Mark done",
+    "nextMood": "How are you feeling today?",
+    "logMood": "Log mood",
+    "nextFocus": "A focus session closes your ring.",
+    "startFocus": "Start focusing",
+    "nextGoal": "“{{title}}” is due {{date}}",
+    "allDone": "Everything done for today. Nice work!",
+    "events": "Today's events",
+    "noEvents": "Nothing scheduled today."
+  },
+  "install": {
+    "title": "Install ONMi on your iPhone",
+    "why": "On iPhone, reminders and the app-icon badge only work when ONMi is installed on your Home Screen.",
+    "step1": "In Safari, tap the Share button (the square with an arrow).",
+    "step2": "Choose “Add to Home Screen” and confirm.",
+    "step3": "Open ONMi from its new icon, then turn on reminders in Settings."
+  },
+  "welcome": {
+    "skip": "Skip",
+    "next": "Next",
+    "start": "Let's go",
+    "one": {
+      "title": "Welcome, {{name}}",
+      "body": "Notes, habits, projects, goals and focus time in one calm place. Start small: one habit and one note are enough."
+    },
+    "two": {
+      "title": "Yours, and private",
+      "body": "Hide sensitive notes with their own password, lock them automatically when you leave the app, and export or import everything whenever you want."
+    },
+    "three": {
+      "title": "Make it an app",
+      "body": "Install ONMi on your Home Screen to get reminders and a badge with the habits you still have to do today."
+    }
+  },
+  "capture": {
+    "open": "Quick add",
+    "title": "Quick add",
+    "tabs": {
+      "note": "Note",
+      "habit": "Habit",
+      "mood": "Mood"
+    },
+    "titlePlaceholder": "Title (optional)",
+    "notePlaceholder": "Write it down before you forget…",
+    "saveNote": "Save note",
+    "untitled": "Quick note",
+    "noHabits": "You have no habits yet. Create one in Habits.",
+    "savedOffline": "No connection: saved on this device, it will sync automatically.",
+    "offline": "You are offline.",
+    "offlineQueued_other": "You are offline. {{count}} notes waiting to sync.",
+    "syncing_other": "Syncing {{count}} notes…",
+    "synced_other": "{{count}} notes synced",
+    "offlineQueued_one": "You are offline. {{count}} note waiting to sync.",
+    "syncing_one": "Syncing {{count}} note…",
+    "synced_one": "{{count}} note synced"
+  },
+  "backup": {
+    "desc": "Download all your data as a file, or import a previous backup. Importing only adds what is missing: it never overwrites or deletes anything.",
+    "never": "You have not downloaded a backup on this device yet.",
+    "today": "Last backup: today.",
+    "daysAgo_other": "Last backup: {{count}} days ago.",
+    "import": "Import backup",
+    "imported": "Imported: {{notes}} notes, {{projects}} projects, {{goals}} goals, {{habits}} habits, {{moods}} moods.",
+    "nothingNew": "Nothing new to import: you already have all of it.",
+    "invalidFile": "That file is not a valid ONMi backup.",
+    "daysAgo_one": "Last backup: {{count}} day ago."
+  },
+  "sessions": {
+    "title": "Open sessions",
+    "desc": "Devices where you are signed in. Sign out of any you no longer use.",
+    "thisDevice": "This device",
+    "lastUsed": "Last used {{when}}",
+    "signOut": "Sign out",
+    "signOutOthers": "Sign out of all other devices",
+    "closed": "Session closed"
+  },
+  "share": {
+    "button": "Share my week",
+    "title": "My week",
+    "habits": "Habits done",
+    "focus": "Focus time",
+    "goals": "Goals reached",
+    "mood": "Average mood",
+    "streak": "Best streak: {{name}}, {{count}} {{unit}}",
+    "days": "days",
+    "weeks": "weeks",
+    "downloaded": "Image downloaded",
+    "failed": "Could not create the image."
+  },
+  "passkeys": {
+    "title": "Passkeys",
+    "desc": "Sign in with Face ID, Touch ID or a security key instead of typing your password. Your biometrics never leave the device.",
+    "add": "Add a passkey",
+    "added": "Passkey added",
+    "removed": "Passkey removed",
+    "created": "Added {{date}}",
+    "alreadyHere": "This device already has a passkey for ONMi.",
+    "unsupported": "This browser does not support passkeys."
   }
 }

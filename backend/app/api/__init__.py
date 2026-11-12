@@ -5,6 +5,7 @@ def register_blueprints(app: Flask) -> None:
     from . import (
         admin,
         auth,
+        backup,
         buddies,
         calendar,
         coach,
@@ -14,8 +15,10 @@ def register_blueprints(app: Flask) -> None:
         insights,
         internal,
         notes,
+        passkeys,
         projects,
         push,
+        search,
         wellbeing,
     )
 
@@ -34,5 +37,8 @@ def register_blueprints(app: Flask) -> None:
         admin,
         internal,
         calendar,
+        search,
+        backup,
+        passkeys,
     ):
         app.register_blueprint(module.bp)

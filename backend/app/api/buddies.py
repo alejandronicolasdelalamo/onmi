@@ -5,7 +5,7 @@ from flask_jwt_extended import jwt_required
 from sqlalchemy import or_
 
 from ..extensions import db, limiter
-from ..models import Cheer, Friendship, Habit, User
+from ..models import Calendar, CalendarViewer, Cheer, Friendship, Habit, User
 from ..openapi import doc
 from ..schemas import BuddyRequestIn, CheerIn
 from ..services import buddies as svc
@@ -161,7 +161,8 @@ def accept(friendship_id):
 @doc(
     "Rechazar, cancelar o dejar de ser compañeros",
     "Buddies",
-    description="Cualquiera de las dos partes puede hacerlo. También se borran los ánimos entre ambos.",
+    description="Cualquiera de las dos partes puede hacerlo. También se borran los ánimos entre ambos "
+    "y se dejan de compartir los calendarios.",
 )
 def remove(friendship_id):
     user = current_user()
@@ -175,6 +176,13 @@ def remove(friendship_id):
             )
         )
     )
+    # Dejar de ser compañeros también cierra los calendarios que se compartían en ambos sentidos (si luego volvéis
+    # a conectar, nadie recupera el acceso sin que se vuelva a compartir a propósito).
+    for owner, viewer in ((f.requester_id, f.addressee_id), (f.addressee_id, f.requester_id)):
+        ids = db.select(Calendar.id).where(Calendar.user_id == owner)
+        db.session.execute(
+            db.delete(CalendarViewer).where(CalendarViewer.viewer_id == viewer, CalendarViewer.calendar_id.in_(ids))
+        )
     db.session.delete(f)
     db.session.commit()
     return jsonify({"ok": True})

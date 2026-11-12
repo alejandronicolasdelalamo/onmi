@@ -13,16 +13,22 @@ import {
   type ReactNode,
 } from "react";
 import i18n from "./i18n";
-import { api, ApiError } from "./api";
+import { api, ApiError, isServerUnavailable } from "./api";
+import { lockNotes, onNotesLocked, startNotesAutoLock } from "./notes-lock";
+import { signInWithPasskey } from "./passkeys";
 import type { PublicConfig, User } from "./types";
 
 interface AuthCtx {
   user: User | null;
   loading: boolean;
+  /** La sesión no se pudo comprobar (servidor caído o sin red): no es lo mismo que "sin sesión". */
+  sessionError: unknown;
+  retrySession: () => void;
   login: (email: string, password: string) => Promise<User>;
   register: (name: string, email: string, password: string) => Promise<User>;
   google: (credential: string) => Promise<User>;
   demo: () => Promise<User>;
+  passkey: () => Promise<User>;
   logout: () => Promise<void>;
   setUser: (u: User) => void;
 }
@@ -32,6 +38,7 @@ export const ME_KEY = ["me"] as const;
 
 /** Borra los datos del usuario anterior pero conserva la query de sesión (`me`) y su observador. */
 function resetUserData(qc: QueryClient) {
+  lockNotes();
   qc.removeQueries({
     predicate: (q) =>
       q.queryKey[0] !== ME_KEY[0] && q.queryKey[0] !== "public-config",
@@ -58,7 +65,12 @@ export function useSetLanguage() {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const qc = useQueryClient();
 
-  const { data: user = null, isPending } = useQuery({
+  const {
+    data: user = null,
+    isPending,
+    error: sessionError,
+    refetch,
+  } = useQuery({
     queryKey: ME_KEY,
     queryFn: async () => {
       try {
@@ -69,7 +81,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     },
     staleTime: 5 * 60_000,
-    retry: false,
+    // Un servidor gratuito dormido tarda ~1 min en despertar: se reintenta en vez de mandar al login.
+    retry: (count, e) => isServerUnavailable(e) && count < 15,
+    retryDelay: 4000,
   });
 
   // El idioma guardado en el perfil manda al iniciar sesión.
@@ -77,6 +91,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (user?.locale && !i18n.language?.startsWith(user.locale))
       void i18n.changeLanguage(user.locale);
   }, [user?.locale]);
+
+  // Bloqueo automático de las notas ocultas al salir de la app o tras un rato sin usarla.
+  useEffect(() => startNotesAutoLock(), []);
+
+  // Al volver a ocultar las notas se descarta de la caché el contenido que estaba a la vista.
+  useEffect(
+    () => onNotesLocked(() => qc.removeQueries({ queryKey: ["notes"] })),
+    [qc],
+  );
 
   const setUser = useCallback((u: User) => qc.setQueryData(ME_KEY, u), [qc]);
 
@@ -93,6 +116,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       user,
       loading: isPending,
+      sessionError,
+      retrySession: () => void refetch(),
       login: async (email, password) =>
         (
           await session.mutateAsync({
@@ -116,6 +141,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         ).user,
       demo: async () =>
         (await session.mutateAsync({ path: "/api/auth/demo" })).user,
+      passkey: async () => {
+        const user = await signInWithPasskey();
+        resetUserData(qc);
+        qc.setQueryData(ME_KEY, user);
+        return user;
+      },
       logout: async () => {
         await api.post("/api/auth/logout").catch(() => undefined);
         resetUserData(qc);
@@ -124,7 +155,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [user, isPending, session.mutateAsync, qc, setUser],
+    [user, isPending, sessionError, refetch, session.mutateAsync, qc, setUser],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

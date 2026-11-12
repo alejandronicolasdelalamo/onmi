@@ -5,6 +5,8 @@ from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import (
     create_access_token,
     create_refresh_token,
+    decode_token,
+    get_jwt,
     get_jwt_identity,
     jwt_required,
     set_access_cookies,
@@ -13,7 +15,7 @@ from flask_jwt_extended import (
 )
 
 from ..extensions import db, limiter
-from ..models import AuthToken, Role, TokenKind, User
+from ..models import AuthToken, Role, TokenKind, User, UserSession
 from ..openapi import doc
 from ..schemas import (
     ChangePasswordIn,
@@ -38,10 +40,65 @@ def _is_mobile() -> bool:
     return request.headers.get("X-Client", "").lower() == "mobile"
 
 
+def device_label(user_agent: str, mobile_app: bool = False) -> str:
+    """Nombre legible del dispositivo a partir del User-Agent (p. ej. «iPhone · Safari»)."""
+    if mobile_app:
+        return "ONMi app"
+    ua = user_agent or ""
+    if "iPhone" in ua:
+        system = "iPhone"
+    elif "iPad" in ua:
+        system = "iPad"
+    elif "Android" in ua:
+        system = "Android"
+    elif "Macintosh" in ua or "Mac OS X" in ua:
+        system = "Mac"
+    elif "Windows" in ua:
+        system = "Windows"
+    elif "Linux" in ua:
+        system = "Linux"
+    else:
+        system = "?"
+    if "Edg/" in ua or "EdgiOS" in ua:
+        browser = "Edge"
+    elif "Firefox" in ua or "FxiOS" in ua:
+        browser = "Firefox"
+    elif "CriOS" in ua or "Chrome/" in ua:
+        browser = "Chrome"
+    elif "Safari" in ua:
+        browser = "Safari"
+    else:
+        browser = ""
+    return f"{system} · {browser}" if browser else system
+
+
+def _tokens_for(user: User, session: UserSession) -> tuple[str, str]:
+    claims = {"sid": session.id}
+    access = create_access_token(identity=str(user.id), additional_claims=claims)
+    refresh_token = create_refresh_token(identity=str(user.id), additional_claims=claims)
+    session.refresh_jti = decode_token(refresh_token)["jti"]
+    session.last_used_at = utcnow()
+    return access, refresh_token
+
+
+def _start_session(user: User) -> UserSession:
+    cutoff = utcnow() - timedelta(days=31)
+    for old in [
+        s for s in user.sessions if s.last_used_at < cutoff or s.revoked_at is not None and s.revoked_at < cutoff
+    ]:
+        db.session.delete(old)
+    session = UserSession(
+        user_id=user.id,
+        device=device_label(request.headers.get("User-Agent", ""), _is_mobile())[:120],
+    )
+    db.session.add(session)
+    db.session.flush()
+    return session
+
+
 def _session_response(user: User, status: int = 200):
     """Sesión iniciada: navegador -> tokens JWT en cookies httpOnly; app nativa -> tokens en el cuerpo (sin cookies)."""
-    access = create_access_token(identity=str(user.id))
-    refresh_token = create_refresh_token(identity=str(user.id))
+    access, refresh_token = _tokens_for(user, _start_session(user))
     if _is_mobile():
         resp = jsonify({"user": user.to_dict(), "access_token": access, "refresh_token": refresh_token})
         resp.status_code = status
@@ -119,6 +176,17 @@ def login():
 @bp.post("/logout")
 @doc("Sign out", "Auth", auth=False)
 def logout():
+    # Se cierra la sesión también en el servidor (aunque el access token ya haya caducado).
+    raw = request.cookies.get(current_app.config["JWT_ACCESS_COOKIE_NAME"])
+    bearer = request.headers.get("Authorization", "").removeprefix("Bearer ").strip()
+    try:
+        sid = decode_token(raw or bearer, allow_expired=True).get("sid") if (raw or bearer) else None
+    except Exception:  # token ilegible: solo se limpian las cookies
+        sid = None
+    session = db.session.get(UserSession, sid) if sid else None
+    if session is not None and session.revoked_at is None:
+        session.revoked_at = utcnow()
+        db.session.commit()
     resp = jsonify({"ok": True})
     unset_jwt_cookies(resp)
     return resp
@@ -131,11 +199,18 @@ def refresh():
     user = db.session.get(User, int(get_jwt_identity()))
     if user is None or not user.is_active:
         raise ApiError("User unavailable", 401, "unauthorized")
-    access = create_access_token(identity=str(user.id))
+    sid = get_jwt().get("sid")
+    session = db.session.get(UserSession, sid) if sid else None
+    if session is None:  # sesión creada antes de existir el listado por dispositivo
+        session = _start_session(user)
+    access, new_refresh = _tokens_for(user, session)
+    db.session.commit()
     if _is_mobile():
         return jsonify({"user": user.to_dict(), "access_token": access})
     resp = jsonify({"user": user.to_dict()})
     set_access_cookies(resp, access)
+    # Sesión deslizante: usar la app alarga otros 30 días la caducidad del refresh.
+    set_refresh_cookies(resp, new_refresh)
     return resp
 
 
@@ -184,14 +259,14 @@ def delete_me():
 @doc(
     "Descargar todos mis datos en JSON",
     "Auth",
-    description="Perfil, notas, proyectos, metas, hábitos, ánimo y pomodoros.",
+    description="Perfil, notas, proyectos, metas, hábitos, ánimo y pomodoros. Las notas ocultas salen sin contenido.",
 )
 def export_data():
     user = current_user()
     payload = {
         "exported_at": utcnow().isoformat() + "Z",
         "user": user.to_dict(),
-        "notes": [n.to_dict() for n in user.notes],
+        "notes": [n.to_dict() for n in user.notes if n.deleted_at is None],
         "projects": [p.to_dict() for p in user.projects],
         "goals": [g.to_dict() for g in user.goals],
         "habits": [h.to_dict() for h in user.habits],
@@ -320,6 +395,60 @@ def demo_login():
     from ..services.seed import ensure_demo_user
 
     return _session_response(ensure_demo_user())
+
+
+# ---- sesiones activas ------------------------------------------------------------------------------
+@bp.get("/sessions")
+@jwt_required()
+@doc("Devices with an open session", "Auth")
+def list_sessions():
+    user = current_user()
+    current = get_jwt().get("sid")
+    rows = sorted((s for s in user.sessions if s.revoked_at is None), key=lambda s: s.last_used_at, reverse=True)
+    return jsonify(
+        {
+            "items": [
+                {
+                    "id": s.id,
+                    "device": s.device,
+                    "created_at": s.created_at.isoformat(),
+                    "last_used_at": s.last_used_at.isoformat(),
+                    "current": s.id == current,
+                }
+                for s in rows
+            ]
+        }
+    )
+
+
+@bp.delete("/sessions/<int:session_id>")
+@jwt_required()
+@doc("Sign out one of my other devices", "Auth")
+def revoke_session(session_id):
+    user = current_user()
+    session = db.session.get(UserSession, session_id)
+    if session is None or session.user_id != user.id or session.revoked_at is not None:
+        raise ApiError("Session not found", 404, "not_found")
+    if session.id == get_jwt().get("sid"):
+        raise ApiError("Use sign out to close this session", 400, "current_session")
+    session.revoked_at = utcnow()
+    db.session.commit()
+    return jsonify({"ok": True})
+
+
+@bp.delete("/sessions")
+@jwt_required()
+@doc("Sign out every other device", "Auth")
+def revoke_other_sessions():
+    user = current_user()
+    current = get_jwt().get("sid")
+    n = 0
+    for s in user.sessions:
+        if s.id != current and s.revoked_at is None:
+            s.revoked_at = utcnow()
+            n += 1
+    db.session.commit()
+    return jsonify({"revoked": n})
 
 
 __all__ = ["bp", "Role"]

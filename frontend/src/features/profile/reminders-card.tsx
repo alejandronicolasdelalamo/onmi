@@ -14,6 +14,8 @@ import {
   PushError,
   pushSupported,
 } from "@/lib/push";
+import { needsIOSInstall } from "@/lib/platform";
+import { InstallSteps } from "@/components/install-guide";
 import type { PushStatus } from "@/lib/types";
 
 /** Activar o desactivar los recordatorios de hábitos (Web Push) en este dispositivo. */
@@ -85,7 +87,14 @@ export function RemindersCard() {
     Notification.permission === "denied";
 
   let body: React.ReactNode;
-  if (!supported)
+  if (!supported && needsIOSInstall())
+    body = (
+      <div className="space-y-3">
+        <p className="text-sm text-muted-foreground">{t("install.why")}</p>
+        <InstallSteps />
+      </div>
+    );
+  else if (!supported)
     body = (
       <p className="text-sm text-muted-foreground">
         {t("reminders.unsupported")}

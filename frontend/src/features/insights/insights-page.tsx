@@ -6,6 +6,7 @@ import { MoodFace } from "@/components/mood-face";
 import { QueryError } from "@/components/query-error";
 import { Page, PageHeader } from "@/components/page";
 import { CoachCard } from "./coach-card";
+import { ShareWeekButton } from "./share-week";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -178,6 +179,7 @@ export function InsightsPage() {
       <PageHeader
         title={t("insights.title")}
         subtitle={t("insights.subtitle")}
+        actions={data ? <ShareWeekButton data={data} /> : undefined}
       />
       {isPending || !data || !week ? (
         <div className="space-y-6">

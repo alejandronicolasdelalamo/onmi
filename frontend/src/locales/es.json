@@ -24,7 +24,19 @@
     "theme": "Tema",
     "light": "Claro",
     "dark": "Oscuro",
-    "system": "Sistema"
+    "system": "Sistema",
+    "midnight": "Medianoche",
+    "midnightHint": "Negro puro: ahorra batería en pantallas OLED como la del iPhone.",
+    "accent": "Color de acento",
+    "accents": {
+      "indigo": "Índigo",
+      "blue": "Azul",
+      "teal": "Turquesa",
+      "green": "Verde",
+      "amber": "Ámbar",
+      "rose": "Rosa",
+      "pink": "Fucsia"
+    }
   },
   "nav": {
     "dashboard": "Inicio",
@@ -83,7 +95,8 @@
     "backToSignIn": "Volver a iniciar sesión",
     "showPassword": "Mostrar contraseña",
     "hidePassword": "Ocultar contraseña",
-    "verifyDismiss": "Ahora no"
+    "verifyDismiss": "Ahora no",
+    "passkey": "Entrar con una passkey"
   },
   "dashboard": {
     "morning": "Buenos días",
@@ -160,7 +173,7 @@
     "edit": "Editar nota",
     "titleLabel": "Título",
     "content": "Contenido",
-    "contentPlaceholder": "Escribe algo… Se admite Markdown.",
+    "contentPlaceholder": "Escribe algo… Admite Markdown. Enlaza notas con [[título]].",
     "tags": "Etiquetas",
     "tagsPlaceholder": "Escribe una etiqueta y pulsa Enter",
     "pin": "Fijar",
@@ -177,7 +190,93 @@
     "deleteTitle": "¿Eliminar «{{name}}»?",
     "updated": "Actualizada {{date}}",
     "nothingToPreview": "Aún no hay nada que previsualizar.",
-    "deleteDesc": "La nota se eliminará de forma permanente."
+    "deleteDesc": "La nota va a la papelera y se elimina de verdad a los 30 días. Puedes restaurarla desde allí.",
+    "lock": {
+      "setupCta": "Ocultar notas",
+      "unlock": "Desbloquear notas ocultas",
+      "lockNow": "Bloquear ya",
+      "locked": "Notas ocultas bloqueadas",
+      "unlocked": "Notas ocultas desbloqueadas unos minutos",
+      "setupDone": "Contraseña de notas creada",
+      "changed": "Contraseña de notas cambiada",
+      "removed": "Contraseña de notas eliminada. Tus notas vuelven a ser visibles.",
+      "hideNote": "Ocultar esta nota con la contraseña de notas",
+      "showNote": "Esta nota está oculta. Pulsa para volver a mostrarla.",
+      "hiddenNote": "Nota oculta",
+      "unlockToView": "Desbloquea para verla",
+      "password": "Contraseña de notas",
+      "repeat": "Repite la contraseña",
+      "current": "Contraseña actual",
+      "currentHint": "Tu contraseña de notas o, si la olvidaste, la de tu cuenta.",
+      "newPassword": "Contraseña nueva",
+      "tooShort": "Usa al menos {{n}} caracteres.",
+      "mismatch": "Las contraseñas no coinciden.",
+      "wrong": "Contraseña incorrecta.",
+      "manageTitle": "Contraseña de notas",
+      "setupTitle": "Ocultar notas con contraseña",
+      "setupDesc": "Elige una contraseña solo para tus notas ocultas (distinta de la de tu cuenta). Las notas ocultas no muestran título ni contenido hasta que la introduces.",
+      "setupSubmit": "Guardar contraseña",
+      "unlockTitle": "Desbloquear notas ocultas",
+      "unlockDesc": "Se quedan visibles unos minutos, hasta que las bloquees o recargues la página.",
+      "unlockSubmit": "Desbloquear",
+      "changeTitle": "Cambiar contraseña de notas",
+      "changeDesc": "Las notas siguen ocultas; solo cambia la contraseña.",
+      "changeSubmit": "Cambiar contraseña",
+      "removeTitle": "Quitar contraseña de notas",
+      "removeDesc": "Todas las notas ocultas volverán a ser notas normales.",
+      "removeSubmit": "Quitar contraseña",
+      "prefsTitle": "En este dispositivo",
+      "lockOnLeave": "Bloquear al salir de la app",
+      "lockOnLeaveHint": "En iPhone: al cambiar de app o apagar la pantalla.",
+      "idle": "Bloquear tras un rato sin actividad",
+      "idleOption": "{{n}} min",
+      "maxHint": "Las notas ocultas siempre se bloquean a los 10 minutos.",
+      "askEachTime": "Pedir la contraseña cada vez que abra una nota oculta",
+      "askEachTimeHint": "La lista nunca las muestra; cada nota se abre con su propia contraseña."
+    },
+    "saveFirst": "Guarda tus cambios antes de abrir otra nota.",
+    "templates": {
+      "label": "Empezar con una plantilla",
+      "journal": "Diario",
+      "journalTitle": "Diario – {{date}}",
+      "journalBody": "## ¿Cómo ha ido hoy?\n\n\n## Qué ha ido bien\n\n- \n\n## A mejorar mañana\n\n- \n",
+      "meeting": "Reunión",
+      "meetingTitle": "Reunión – {{date}}",
+      "meetingBody": "**Asistentes:** \n\n## Orden del día\n\n- \n\n## Notas\n\n\n## Tareas\n\n- [ ] \n",
+      "checklist": "Lista de tareas",
+      "checklistTitle": "Lista de tareas",
+      "checklistBody": "- [ ] \n- [ ] \n- [ ] \n"
+    },
+    "links": {
+      "title": "Notas enlazadas",
+      "outgoing": "Enlaza a",
+      "backlinks": "Mencionada en",
+      "unresolved": "Aún no hay ninguna nota con este título"
+    },
+    "image": {
+      "add": "Añadir imagen",
+      "failed": "No se pudo añadir la imagen.",
+      "unavailable": "Imagen no disponible"
+    },
+    "trash": {
+      "tab": "Papelera",
+      "tabNotes": "Notas",
+      "info": "Las notas borradas se quedan aquí 30 días y luego se eliminan de verdad.",
+      "empty": "Vaciar papelera",
+      "emptyTitle": "La papelera está vacía.",
+      "emptyDesc": "Las notas que borres esperarán aquí 30 días.",
+      "emptyConfirmTitle": "¿Vaciar la papelera?",
+      "emptyConfirmDesc": "Todas las notas de la papelera se eliminarán de forma permanente. No se puede deshacer.",
+      "skippedHidden": "Se conservaron {{n}} notas ocultas. Desbloquea tus notas para eliminarlas.",
+      "restore": "Restaurar",
+      "restored": "Nota restaurada",
+      "forever": "Eliminar para siempre",
+      "foreverTitle": "¿Eliminar esta nota para siempre?",
+      "foreverDesc": "No se puede deshacer.",
+      "deletedOn": "Borrada el {{date}}",
+      "moved": "Movida a la papelera",
+      "undo": "Deshacer"
+    }
   },
   "projects": {
     "title": "Proyectos",
@@ -210,7 +309,13 @@
     "addGoal": "Añadir una meta",
     "noGoals": "Aún no hay metas.",
     "empty": "Aún no hay proyectos.",
-    "emptyDesc": "Crea un proyecto para empezar a planificar."
+    "emptyDesc": "Crea un proyecto para empezar a planificar.",
+    "activity": "Actividad reciente",
+    "activityKinds": {
+      "goal_created": "Meta añadida:",
+      "goal_done": "Meta cumplida:",
+      "note": "Nota actualizada:"
+    }
   },
   "goals": {
     "title": "Metas",
@@ -232,12 +337,16 @@
     "share": "Mostrar a mis compañeros",
     "shareHint": "Verán el título, la fecha límite y si está hecha. Nunca la descripción.",
     "sharedBadge": "Compartida",
-    "privateBadge": "Privada"
+    "privateBadge": "Privada",
+    "milestones": "Hitos",
+    "milestonePlaceholder": "Añade un paso…",
+    "addMilestone": "Añadir hito",
+    "fedBy": "La alimentan"
   },
   "mood": {
     "title": "Ánimo",
-    "subtitle": "Conecta contigo cada día.",
-    "prompt": "¿Cómo te sientes hoy?",
+    "subtitle": "Pregúntate cómo estás, cámbialo cuando sientas otra cosa y mira tu evolución.",
+    "prompt": "¿Cómo te sientes?",
     "notePlaceholder": "Añade una nota (opcional)",
     "save": "Guardar ánimo",
     "saved": "Ánimo guardado",
@@ -251,7 +360,53 @@
       "sad": "Triste"
     },
     "empty": "Aún no hay registros.",
-    "entries": "{{count}} registros"
+    "entries": "{{count}} registros",
+    "today": "Hoy",
+    "yesterday": "Ayer",
+    "prevDay": "Día anterior",
+    "nextDay": "Día siguiente",
+    "backToToday": "Volver a hoy",
+    "notLogged": "Aún sin registrar",
+    "loggedAt": "Registrado a las {{time}}",
+    "changedFrom": "Cambiando desde {{from}}",
+    "pick": "Elige la cara que te represente",
+    "influences": "¿Qué ha influido en tu día?",
+    "influencesHint": "Hasta {{max}}. Te ayuda a ver qué te sube o te baja el ánimo.",
+    "tags": {
+      "sleep": "Sueño",
+      "work": "Trabajo",
+      "study": "Estudios",
+      "family": "Familia",
+      "friends": "Amigos",
+      "partner": "Pareja",
+      "exercise": "Ejercicio",
+      "health": "Salud",
+      "food": "Comida",
+      "weather": "Clima",
+      "money": "Dinero",
+      "hobby": "Aficiones"
+    },
+    "update": "Actualizar ánimo",
+    "updated": "Ánimo actualizado",
+    "delete": "Eliminar registro",
+    "deleteTitle": "¿Eliminar este registro?",
+    "deleteDesc": "Se borrarán el ánimo, la nota y las etiquetas de ese día.",
+    "deleted": "Registro eliminado",
+    "statsTitle": "Últimos 30 días",
+    "streak_one": "{{count}} día seguido",
+    "streak_other": "{{count}} días seguidos",
+    "streakLabel": "Racha",
+    "average": "Media",
+    "logged": "Días registrados",
+    "lifts": "Lo que te sube",
+    "weighs": "Lo que te pesa",
+    "needMore": "Registra unos días más con etiquetas para ver qué te afecta.",
+    "calendar": "Calendario",
+    "prevMonth": "Mes anterior",
+    "nextMonth": "Mes siguiente",
+    "timeline": "Registros recientes",
+    "edit": "Editar",
+    "noNote": "Sin nota"
   },
   "pomodoro": {
     "title": "Enfoque",
@@ -388,7 +543,8 @@
     "newGoal": "Nueva meta",
     "toggleTheme": "Cambiar tema",
     "switchLanguage": "Cambiar idioma",
-    "open": "Acciones rápidas"
+    "open": "Acciones rápidas",
+    "results": "Resultados"
   },
   "errors": {
     "generic": "Algo ha salido mal. Inténtalo de nuevo.",
@@ -415,7 +571,15 @@
     "already_connected": "Ya sois compañeros.",
     "already_pending": "Tu solicitud ya está esperando respuesta.",
     "already_cheered": "Ya has animado hoy a este compañero. Vuelve mañana.",
-    "invalid_range": "Ese rango de fechas no es válido."
+    "invalid_range": "Ese rango de fechas no es válido.",
+    "notes_locked": "Tus notas ocultas se han vuelto a bloquear. Desbloquéalas e inténtalo de nuevo.",
+    "no_notes_password": "Primero crea una contraseña de notas.",
+    "image_too_large": "Esa imagen es demasiado grande.",
+    "invalid_image": "Ese archivo no es una imagen compatible.",
+    "image_quota": "Has llegado al límite de almacenamiento de imágenes.",
+    "passkey_expired": "La solicitud de la passkey caducó. Inténtalo de nuevo.",
+    "passkey_invalid": "No pudimos verificar esa passkey.",
+    "passkey_exists": "Esa passkey ya está registrada."
   },
   "notFound": {
     "title": "Página no encontrada",
@@ -637,6 +801,167 @@
     "sharingDesc": "Elige qué compañeros pueden ver tu calendario.",
     "sharingPrivacy": "Solo ven los eventos que marques como compartidos y nunca tus notas. Puedes dejar de compartir cuando quieras.",
     "sharingSaved": "Compartir actualizado",
-    "noBuddies": "Aún no tienes compañeros. Añade uno en"
+    "noBuddies": "Aún no tienes compañeros. Añade uno en",
+    "personal": "Personal",
+    "calendars": "Calendarios",
+    "calendarsTitle": "Mis calendarios",
+    "calendarsDesc": "Crea los calendarios que quieras y elige, en cada uno, quién puede verlo. Tu calendario Personal es siempre privado.",
+    "newCalendar": "Nuevo calendario",
+    "editCalendar": "Editar calendario",
+    "calendarName": "Nombre",
+    "calendarNamePlaceholder": "Familia, Trabajo, Club de running…",
+    "shareWith": "Compartir con",
+    "sharedWithNobody": "Privado: solo tú lo ves",
+    "sharedWithN_other": "Compartido con {{count}} personas",
+    "calendarSaved": "Calendario guardado",
+    "personalNote": "Tu calendario Personal y todos tus datos de ONMi (hábitos, metas, ánimo, enfoque) son privados y nunca se comparten.",
+    "deleteCalendarTitle": "¿Borrar «{{name}}»?",
+    "deleteCalendarDesc": "Sus eventos no se pierden: pasan a tu calendario Personal (privado).",
+    "scope": "Qué calendarios",
+    "scope_mine": "Míos",
+    "scope_shared": "Compartidos conmigo",
+    "myCalendars": "Mis calendarios",
+    "myData": "Mis datos (privado)",
+    "noSharedCalendars": "Nadie comparte aún un calendario contigo. Cuando un compañero comparta uno, aparecerá aquí.",
+    "calendarField": "Calendario",
+    "eventPrivate": "Privado: solo tú ves este evento.",
+    "eventVisibleTo": "Visible para {{names}}: título, hora y si está hecho. Las notas nunca se comparten.",
+    "layers": {
+      "habits": "Hábitos",
+      "goals": "Metas",
+      "projects": "Proyectos",
+      "mood": "Ánimo",
+      "focus": "Enfoque"
+    },
+    "layerHabits_other": "{{count}} hábitos hechos: {{names}}",
+    "layerFocus": "{{count}} min de enfoque",
+    "sharedWithN_one": "Compartido con {{count}} persona",
+    "layerHabits_one": "{{count}} hábito hecho: {{names}}"
+  },
+  "boot": {
+    "title": "Arrancando ONMi",
+    "seconds": "s restantes, aprox.",
+    "tip": "Consejo:",
+    "phase": {
+      "wake": "Despertando el servidor…",
+      "start": "Arrancando la aplicación…",
+      "connect": "Conectando con tus datos…",
+      "almost": "Casi listo…",
+      "slow": "Está tardando un poco más de lo normal"
+    },
+    "why": "Los servidores gratuitos se duermen cuando nadie los usa. La primera visita tras un rato tarda cerca de un minuto; después todo es instantáneo.",
+    "slow": "Sigue trabajando. Deja esta página abierta: continuará sola en cuanto el servidor esté listo.",
+    "tip1": "enlaza notas entre sí escribiendo [[título]].",
+    "tip2": "oculta tus notas privadas con su propia contraseña.",
+    "tip3": "instala ONMi en tu pantalla de inicio desde el menú Compartir de Safari.",
+    "tip4": "mira tu día de un vistazo en Inicio: hábitos, eventos y metas."
+  },
+  "today": {
+    "title": "Hoy",
+    "habits": "Hábitos",
+    "focus": "Enfoque",
+    "mood": "Ánimo",
+    "logged": "registrado",
+    "notYet": "aún no",
+    "next": "Lo siguiente",
+    "nextHabit": "Marca «{{name}}» como hecho",
+    "markDone": "Marcar hecho",
+    "nextMood": "¿Cómo te sientes hoy?",
+    "logMood": "Registrar ánimo",
+    "nextFocus": "Una sesión de enfoque cierra tu anillo.",
+    "startFocus": "Empezar a enfocarme",
+    "nextGoal": "«{{title}}» vence el {{date}}",
+    "allDone": "Todo hecho por hoy. ¡Buen trabajo!",
+    "events": "Eventos de hoy",
+    "noEvents": "Nada programado para hoy."
+  },
+  "install": {
+    "title": "Instala ONMi en tu iPhone",
+    "why": "En iPhone, los recordatorios y el número del icono solo funcionan si ONMi está instalada en la pantalla de inicio.",
+    "step1": "En Safari, pulsa el botón Compartir (el cuadrado con una flecha).",
+    "step2": "Elige «Añadir a pantalla de inicio» y confirma.",
+    "step3": "Abre ONMi desde su nuevo icono y activa los recordatorios en Ajustes."
+  },
+  "welcome": {
+    "skip": "Saltar",
+    "next": "Siguiente",
+    "start": "¡Vamos!",
+    "one": {
+      "title": "Te damos la bienvenida, {{name}}",
+      "body": "Notas, hábitos, proyectos, metas y tiempo de enfoque en un lugar tranquilo. Empieza poco a poco: un hábito y una nota bastan."
+    },
+    "two": {
+      "title": "Tuyo y privado",
+      "body": "Oculta las notas sensibles con su propia contraseña, bloquéalas solas al salir de la app y exporta o importa todo cuando quieras."
+    },
+    "three": {
+      "title": "Conviértela en app",
+      "body": "Instala ONMi en tu pantalla de inicio para recibir recordatorios y un número en el icono con los hábitos que te faltan hoy."
+    }
+  },
+  "capture": {
+    "open": "Añadir rápido",
+    "title": "Añadir rápido",
+    "tabs": {
+      "note": "Nota",
+      "habit": "Hábito",
+      "mood": "Ánimo"
+    },
+    "titlePlaceholder": "Título (opcional)",
+    "notePlaceholder": "Apúntalo antes de que se te olvide…",
+    "saveNote": "Guardar nota",
+    "untitled": "Nota rápida",
+    "noHabits": "Aún no tienes hábitos. Crea uno en Hábitos.",
+    "savedOffline": "Sin conexión: guardada en este dispositivo, se sincronizará sola.",
+    "offline": "Estás sin conexión.",
+    "offlineQueued_other": "Estás sin conexión. {{count}} notas esperando para sincronizar.",
+    "syncing_other": "Sincronizando {{count}} notas…",
+    "synced_other": "{{count}} notas sincronizadas",
+    "offlineQueued_one": "Estás sin conexión. {{count}} nota esperando para sincronizar.",
+    "syncing_one": "Sincronizando {{count}} nota…",
+    "synced_one": "{{count}} nota sincronizada"
+  },
+  "backup": {
+    "desc": "Descarga todos tus datos en un archivo o importa una copia anterior. Importar solo añade lo que falta: nunca sobrescribe ni borra nada.",
+    "never": "Aún no has descargado ninguna copia en este dispositivo.",
+    "today": "Última copia: hoy.",
+    "daysAgo_other": "Última copia: hace {{count}} días.",
+    "import": "Importar copia",
+    "imported": "Importado: {{notes}} notas, {{projects}} proyectos, {{goals}} metas, {{habits}} hábitos, {{moods}} ánimos.",
+    "nothingNew": "No hay nada nuevo que importar: ya lo tienes todo.",
+    "invalidFile": "Ese archivo no es una copia válida de ONMi.",
+    "daysAgo_one": "Última copia: hace {{count}} día."
+  },
+  "sessions": {
+    "title": "Sesiones abiertas",
+    "desc": "Dispositivos donde has iniciado sesión. Cierra los que ya no uses.",
+    "thisDevice": "Este dispositivo",
+    "lastUsed": "Último uso {{when}}",
+    "signOut": "Cerrar sesión",
+    "signOutOthers": "Cerrar sesión en los demás dispositivos",
+    "closed": "Sesión cerrada"
+  },
+  "share": {
+    "button": "Compartir mi semana",
+    "title": "Mi semana",
+    "habits": "Hábitos cumplidos",
+    "focus": "Tiempo de enfoque",
+    "goals": "Metas logradas",
+    "mood": "Ánimo medio",
+    "streak": "Mejor racha: {{name}}, {{count}} {{unit}}",
+    "days": "días",
+    "weeks": "semanas",
+    "downloaded": "Imagen descargada",
+    "failed": "No se pudo crear la imagen."
+  },
+  "passkeys": {
+    "title": "Passkeys",
+    "desc": "Entra con Face ID, Touch ID o una llave de seguridad en vez de escribir la contraseña. Tu biometría nunca sale del dispositivo.",
+    "add": "Añadir una passkey",
+    "added": "Passkey añadida",
+    "removed": "Passkey eliminada",
+    "created": "Añadida el {{date}}",
+    "alreadyHere": "Este dispositivo ya tiene una passkey de ONMi.",
+    "unsupported": "Este navegador no admite passkeys."
   }
 }

@@ -147,7 +147,7 @@ def test_edit_every_kind_of_event_after_creating_it(client, user):
         {"repeat": "daily", "until": "2026-12-31"},
         {"repeat": "weekdays", "weekdays": [0, 2, 4], "every_weeks": 2},
         {"repeat": "weekly_count", "per_week": 3},
-        {"shared": True, "notes": "x", "color": "#ef4444"},
+        {"notes": "x", "color": "#ef4444"},
     ]
     for body in bodies:
         created = new_event(client, **body).get_json()
@@ -186,98 +186,6 @@ def test_events_are_private_to_their_owner(client, other_client, user):
 
 def test_calendar_requires_login(app):
     assert app.test_client().get("/api/calendar").status_code == 401
-
-
-# ---- compartir -----------------------------------------------------------------------------------------
-def test_sharing_only_with_accepted_buddies(client, other_client, user):
-    other_id = my_id(other_client)
-    assert client.put("/api/calendar/sharing", json={"user_ids": [other_id]}).status_code == 404
-    connect(client, other_client)
-    assert client.put("/api/calendar/sharing", json={"user_ids": [other_id]}).status_code == 200
-    s = client.get("/api/calendar/sharing").get_json()
-    assert s["buddies"][0]["shared"] is True
-    assert other_client.get("/api/calendar/sharing").get_json()["shared_with_me"][0]["id"] == my_id(client)
-
-
-def test_viewer_sees_only_shared_events_without_notes(client, other_client, user):
-    connect(client, other_client)
-    new_event(client, title="Visible", shared=True, notes="secreto")
-    new_event(client, title="Privado", shared=False)
-    q = "/api/calendar/shared?from=2026-03-02&to=2026-03-08"
-    assert other_client.get(q).get_json()["people"] == []  # aún no he compartido el calendario
-    client.put("/api/calendar/sharing", json={"user_ids": [my_id(other_client)]})
-    people = other_client.get(q).get_json()["people"]
-    assert len(people) == 1
-    titles = [o["title"] for o in people[0]["occurrences"]]
-    assert titles == ["Visible"]
-    assert "notes" not in people[0]["occurrences"][0]
-    assert "secreto" not in str(people)
-
-
-def test_sharing_is_one_way_and_per_person(client, other_client, carol, user):  # noqa: F811
-    connect(client, other_client)
-    connect(client, carol)
-    new_event(client, shared=True)
-    client.put("/api/calendar/sharing", json={"user_ids": [my_id(other_client)]})
-    q = "/api/calendar/shared?from=2026-03-02&to=2026-03-08"
-    assert len(other_client.get(q).get_json()["people"]) == 1
-    assert carol.get(q).get_json()["people"] == []  # compañera, pero sin compartir con ella
-    assert client.get(q).get_json()["people"] == []  # el que comparte no se ve a sí mismo
-
-
-def test_breaking_the_friendship_stops_the_sharing(client, other_client, user):
-    connect(client, other_client)
-    new_event(client, shared=True)
-    client.put("/api/calendar/sharing", json={"user_ids": [my_id(other_client)]})
-    q = "/api/calendar/shared?from=2026-03-02&to=2026-03-08"
-    assert len(other_client.get(q).get_json()["people"]) == 1
-    fid = client.get("/api/buddies").get_json()["friends"][0]["friendship_id"]
-    client.delete(f"/api/buddies/{fid}")
-    assert other_client.get(q).get_json()["people"] == []
-
-
-def test_unsharing_with_an_empty_list(client, other_client, user):
-    connect(client, other_client)
-    client.put("/api/calendar/sharing", json={"user_ids": [my_id(other_client)]})
-    client.put("/api/calendar/sharing", json={"user_ids": []})
-    assert client.get("/api/calendar/sharing").get_json()["buddies"][0]["shared"] is False
-
-
-def test_demo_account_cannot_share_but_sees_example_calendar(app):
-    c = app.test_client()
-    assert c.post("/api/auth/demo").status_code == 200
-    assert c.put("/api/calendar/sharing", json={"user_ids": []}).status_code == 403
-    mine = c.get("/api/calendar?from=2026-01-01&to=2026-02-15").get_json()
-    assert mine["events"]
-    shared = c.get("/api/calendar/shared").get_json()["people"]
-    assert shared and shared[0]["user"]["name"] == "Sam Rivera"
-    assert all(o["title"] != "Therapy" for o in shared[0]["occurrences"])  # el evento privado de Sam no se ve
-
-
-def test_an_old_demo_without_calendar_gets_the_example_events_once(app):
-    """La demo de producción se creó antes de existir el calendario: al entrar se completa, sin duplicar."""
-    from app.extensions import db
-    from app.models import CalendarEvent, CalendarShare
-
-    c = app.test_client()
-    assert c.post("/api/auth/demo").status_code == 200
-    with app.app_context():
-        db.session.execute(db.delete(CalendarShare))
-        db.session.execute(db.delete(CalendarEvent))
-        db.session.commit()
-    assert app.test_client().post("/api/auth/demo").status_code == 200  # otra visita a la demo
-    c2 = app.test_client()
-    c2.post("/api/auth/demo")
-    rng = "from=2026-01-01&to=2026-02-15"
-    mine = c2.get(f"/api/calendar?{rng}").get_json()["events"]
-    assert {e["title"] for e in mine} == {"Deep work", "Gym", "Study Spanish", "Dentist"}
-    people = c2.get("/api/calendar/shared").get_json()["people"]
-    assert len(people) == 1 and people[0]["user"]["name"] == "Sam Rivera"
-    # Entrar otra vez no duplica nada.
-    c2.post("/api/auth/demo")
-    with app.app_context():
-        assert db.session.scalar(db.select(db.func.count(CalendarEvent.id))) == 6
-        assert db.session.scalar(db.select(db.func.count(CalendarShare.id))) == 1
 
 
 # ---- mini perfil y metas compartidas -------------------------------------------------------------------

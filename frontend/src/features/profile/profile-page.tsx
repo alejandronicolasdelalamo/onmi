@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
-import { BadgeCheck, Download, MailWarning } from "lucide-react";
+import { BadgeCheck, MailWarning } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -22,9 +22,11 @@ import { api } from "@/lib/api";
 import { useAuth, usePublicConfig, useSetLanguage } from "@/lib/auth";
 import { errorMessage } from "@/lib/errors";
 import i18n, { LANGUAGES } from "@/lib/i18n";
-import { useTheme, type Theme } from "@/lib/theme";
+import { ACCENTS, useTheme, type Theme } from "@/lib/theme";
+import { BackupCard, SessionsCard } from "./backup-sessions";
+import { PasskeysCard } from "./passkeys-card";
 import type { User } from "@/lib/types";
-import { cn, localISODate } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { AvatarGif } from "@/features/mood/mood-page";
 
 import { PasswordInput } from "@/components/ui/password-input";
@@ -135,47 +137,6 @@ function PasswordForm() {
   );
 }
 
-function DataExport() {
-  const { t } = useTranslation();
-  const m = useMutation({
-    mutationFn: async () => {
-      const data = await api.get<unknown>("/api/auth/export");
-      const url = URL.createObjectURL(
-        new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }),
-      );
-      const a = Object.assign(document.createElement("a"), {
-        href: url,
-        download: `onmi-export-${localISODate()}.json`,
-      });
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    },
-    onSuccess: () => toast.success(t("profile.downloaded")),
-    onError: (e) => toast.error(errorMessage(e, t)),
-  });
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t("profile.data")}</CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-wrap items-center justify-between gap-3">
-        <p className="max-w-lg text-sm text-muted-foreground">
-          {t("profile.dataDesc")}
-        </p>
-        <Button
-          variant="outline"
-          onClick={() => m.mutate()}
-          disabled={m.isPending}
-        >
-          <Download /> {t("profile.download")}
-        </Button>
-      </CardContent>
-    </Card>
-  );
-}
-
 function DeleteAccount() {
   const { t } = useTranslation();
   const { logout } = useAuth();
@@ -232,7 +193,7 @@ export function ProfilePage() {
   const { t } = useTranslation();
   const { user, setUser } = useAuth();
   const setLanguage = useSetLanguage();
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, accent, setAccent } = useTheme();
   const [name, setName] = useState(user?.name ?? "");
   const [bio, setBio] = useState(user?.bio ?? "");
   const { data: config } = usePublicConfig();
@@ -391,10 +352,45 @@ export function ProfilePage() {
                   options={[
                     { value: "light", label: t("common.light") },
                     { value: "dark", label: t("common.dark") },
+                    { value: "midnight", label: t("common.midnight") },
                     { value: "system", label: t("common.system") },
                   ]}
                   onChange={setTheme}
                 />
+                {theme === "midnight" && (
+                  <p className="text-xs text-muted-foreground">
+                    {t("common.midnightHint")}
+                  </p>
+                )}
+              </div>
+              <div className="space-y-2 sm:col-span-2">
+                <p className="text-sm font-medium" id="accent-label">
+                  {t("common.accent")}
+                </p>
+                <div
+                  role="radiogroup"
+                  aria-labelledby="accent-label"
+                  className="flex flex-wrap gap-2.5"
+                >
+                  {ACCENTS.map((a) => (
+                    <button
+                      key={a}
+                      type="button"
+                      role="radio"
+                      aria-checked={accent === a}
+                      aria-label={t(`common.accents.${a}`)}
+                      title={t(`common.accents.${a}`)}
+                      onClick={() => setAccent(a)}
+                      data-accent={a === "indigo" ? undefined : a}
+                      className={cn(
+                        "size-9 cursor-pointer rounded-full bg-primary transition-transform active:scale-90 pointer-coarse:size-11",
+                        accent === a
+                          ? "ring-2 ring-primary ring-offset-2 ring-offset-card"
+                          : "opacity-80 hover:opacity-100",
+                      )}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
           </CardContent>
@@ -404,7 +400,7 @@ export function ProfilePage() {
 
         <AiCoachCard />
 
-        <DataExport />
+        <BackupCard />
 
         {!user.is_demo && (
           <>
@@ -422,6 +418,8 @@ export function ProfilePage() {
                 )}
               </CardContent>
             </Card>
+            <PasskeysCard />
+            <SessionsCard />
             <Card className="border-destructive/40">
               <CardHeader>
                 <CardTitle className="text-destructive">

@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Logo, LogoMark } from "@/components/brand";
 import { Button } from "@/components/ui/button";
@@ -34,7 +34,10 @@ import { isMac } from "@/lib/format";
 import i18n, { LANGUAGES } from "@/lib/i18n";
 import { useTheme } from "@/lib/theme";
 import { cn, initials } from "@/lib/utils";
+import { QuickCapture } from "@/components/quick-capture";
+import { Welcome } from "@/components/welcome";
 import { CommandPalette } from "./command-palette";
+import { OfflineSync, useAppBadge, useSwipeBack } from "./shell-extras";
 import { NAV } from "./nav";
 
 /** Las cuatro pantallas de uso diario van en la barra inferior del móvil; el resto, en «Más». */
@@ -91,6 +94,9 @@ export function AppShell() {
   const [open, setOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [verifyDismissed, setVerifyDismissed] = useState(readDismissed);
+  const { pathname } = useLocation();
+  useSwipeBack();
+  useAppBadge();
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -367,11 +373,16 @@ export function AppShell() {
           </div>
         )}
 
+        <OfflineSync />
+
         <main
           id="main"
           className="mx-auto w-full max-w-6xl flex-1 px-4 py-5 pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:px-6 sm:py-6 lg:px-8 lg:pb-8"
         >
-          <Outlet />
+          {/* Cada pantalla entra con un fundido suave (como al cambiar de vista en iOS). */}
+          <div key={pathname} className="animate-fade-up">
+            <Outlet />
+          </div>
         </main>
       </div>
 
@@ -430,6 +441,8 @@ export function AppShell() {
         </ul>
       </nav>
 
+      <QuickCapture />
+      <Welcome />
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
     </div>
   );

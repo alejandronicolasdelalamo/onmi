@@ -54,3 +54,8 @@ export function timeAgo(
   }
   return rtf.format(0, "second");
 }
+
+/** Las fechas con hora del servidor son UTC sin «Z»: se leen como UTC (si no, el navegador las toma como hora local). */
+export function parseUtc(iso: string): number {
+  return Date.parse(/[zZ]|[+-]\d\d:?\d\d$/.test(iso) ? iso : `${iso}Z`);
+}
